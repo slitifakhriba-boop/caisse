@@ -164,14 +164,18 @@ label.fl > *{text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg
 .pos-switch{display:none}
 
 /* Category buttons */
-.catgrid{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));grid-auto-rows:minmax(120px,auto);gap:10px;align-content:start;min-height:0}
-.catbtn{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;background:color-mix(in srgb,var(--cc) 13%,var(--panel));color:var(--fg);position:relative;overflow:hidden}
-.catbtn:hover{border-color:var(--cc)}
+.catgrid{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(118px,auto);gap:12px;align-content:start;min-height:0}
+.catbtn{border:0;border-radius:18px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;text-align:center;background:var(--cc);color:#fff;position:relative;overflow:hidden;box-shadow:0 2px 0 rgba(0,0,0,.12)}
+.catbtn:hover{filter:brightness(1.07)}
+.catbtn svg{width:72px;height:46px;flex:none}
+@media (max-width:1100px) and (min-width:861px){.catgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:860px){.catgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.catbtn b{font-size:18px}}
+.catbtn.wide{grid-column:span 2;flex-direction:row;justify-content:center;gap:18px;min-height:70px}
+.catbtn.small{opacity:.9}
 .catbtn:active{transform:scale(.98)}
-.catbtn b{font-family:var(--display);font-size:23px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1.05;overflow-wrap:anywhere}
-.catbtn small{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.catbtn i{position:absolute;right:-14px;bottom:-14px;width:64px;height:64px;border-radius:50%;background:var(--cc);opacity:.85}
-.catbtn.all{background:var(--fg);color:var(--bg);border-color:var(--fg)}.catbtn.all small{color:var(--bg);opacity:.7}
+.catbtn b{font-family:var(--display);font-size:21px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1.08;overflow-wrap:anywhere;text-shadow:0 1px 2px rgba(0,0,0,.18)}
+.catbtn small{position:absolute;right:10px;bottom:6px;font-family:var(--mono);font-size:11px;color:#fff;opacity:.75}
+.catbtn.all{background:var(--fg);color:var(--bg);grid-column:span 2;min-height:70px;justify-content:center}.catbtn.all small{color:var(--bg)}
 .cathead{display:flex;align-items:center;gap:10px;flex:none;min-height:44px}
 .cathead b{font-family:var(--display);font-size:22px;text-transform:uppercase;letter-spacing:.02em}
 .brand{flex-direction:row!important;align-items:center;gap:10px}
@@ -180,6 +184,14 @@ label.fl > *{text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg
 .logo-prev{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .logo-prev img{max-height:70px;max-width:200px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px}
 .inv-doc{background:#fff;color:#111;border:1px solid var(--line);border-radius:6px;padding:18px;overflow-x:auto}
+/* Touch-friendly pickers (iPhone / iPad) */
+.pick{position:relative;display:flex;flex-direction:column;gap:6px}
+.sugg{border:1px solid var(--line);border-radius:8px;background:var(--panel);max-height:320px;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+.sugg .li{min-height:48px}
+.sugg .li b{font-weight:600}
+.sugg .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;padding:8px}
+.sugg .cats button{min-height:56px;border:0;border-radius:10px;background:var(--cc);color:#fff;font-family:var(--display);font-weight:700;font-size:16px;text-transform:uppercase;text-align:left;padding:8px 10px}
+.sugg .shead{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
 /* Tables */
 .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -325,9 +337,9 @@ const U=s=>String(s||'').trim().toUpperCase();
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 const safeId=s=>U(s).replace(/[^A-Z0-9_\-.~:@+]/g,'-');
 
-const ZONES={pneumatique:'Z-ROUES',roue:'Z-ROUES',cadre:'Z-CADRES',direction:'Z-CADRES',freinage:'Z-VISS',transmission:'Z-VISS',accessoire:'Z-VISS',assise:'Z-VISS',poste:'Z-VISS'};
+const ZONES={accessoires:'Z-VISS',equipement:'Z-CASQUE',pneumatique:'Z-ROUES',roue:'Z-ROUES',cadre:'Z-CADRES',direction:'Z-CADRES',freinage:'Z-VISS',transmission:'Z-VISS',accessoire:'Z-VISS',assise:'Z-VISS',poste:'Z-VISS'};
 const ZONE_NAMES={'Z-STOCK-1':'Vélos à trier','Z-STOCK-2':'Vélos en réparation','Z-STOCK-3':'Vélos prêts','Z-ROUES':'Roues & pneus','Z-CADRES':'Cadres & pièces de récup','Z-OUTILS':'Outils','Z-CASQUE':'Casques & accessoires','Z-VISS':'Visserie & petites pièces'};
-const CAT_LABEL={mdo:"Main d'œuvre",'':'Autres'};
+const CAT_LABEL={mdo:"Main d'œuvre",'':'Autres',accessoires:'Accessoires',poste:'Poste de pilotage',equipement:'Équipement cycliste',velo:'Vélo',sorties:'Sorties et séjours',autres:'Autres services',services:'Services atelier',occasion:'Pièces occasion'};
 const catLabel=c=>CAT_LABEL[c]??cap(c);
 const TYPES={produit:'Pièce / produit',service:'Service atelier',occasion:'Occasion',acompte:'Acompte'};
 const ST={trier:{l:'À trier',z:'Z-STOCK-1'},reparation:{l:'En réparation',z:'Z-STOCK-2'},pret:{l:'Prêt à sortir',z:'Z-STOCK-3'},livre:{l:'Livré',z:''}};
@@ -525,15 +537,19 @@ function refreshPOS(all){if(view!=='vente'||!$('#tkLines'))return;const t=cartTo
     <div class="big"><span>${t.deposit?'Reste à payer':'Total'}</span><span>${fmt(t.due)}</span></div>`;
   $('#payBtn').disabled=!cart.lines.length;
   if(all!==false)renderGrid()}
-function catsOf(p){if(p.type==='service'||p.cat==='mdo'||p.cat==='revision')return'services';if(p.type==='occasion')return'occasion';return p.cat||''}
+const CATS=[{k:"cadre",l:"Cadre",c:"#ff8a00",i:"<path d=\"M10 30 L24 12 L46 12 L52 30 Z M24 12 L30 30 M46 12 L44 6 M24 12 L22 7 M18 7 h8\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"10\" cy=\"30\" r=\"3\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"52\" cy=\"30\" r=\"3\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"transmission",l:"Transmission",c:"#e8485c",i:"<circle cx=\"44\" cy=\"22\" r=\"11\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"44\" cy=\"22\" r=\"3\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"12\" cy=\"24\" r=\"5\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M12 19 L44 11 M12 29 L44 33 M44 22 L32 30\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"freinage",l:"Freinage",c:"#6f2177",i:"<path d=\"M20 8 v18 q0 8 6 8 M44 8 v18 q0 8 -6 8 M20 12 h24 M14 6 q10 -4 18 4\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"pneumatique",l:"Pneumatique",c:"#d9b04e",i:"<circle cx=\"32\" cy=\"20\" r=\"16\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"32\" cy=\"20\" r=\"11\" stroke=\"#fff\" stroke-width=\"1.5\" fill=\"none\"/><path d=\"M32 4 v32 M16 20 h32 M21 9 l22 22 M43 9 l-22 22\" stroke=\"#fff\" stroke-width=\"1.2\"/><circle cx=\"32\" cy=\"20\" r=\"2.5\" fill=\"#fff\"/>"},{k:"accessoires",l:"Accessoires",c:"#5b2a96",i:"<path d=\"M14 8 l8 8 M18 6 a5 5 0 1 1 -4 10 M24 18 l22 18 M30 23 l3 -3 M36 28 l3 -3\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"direction",l:"Direction",c:"#5b8ff9",i:"<path d=\"M24 6 h16 v6 h-16 z M22 14 h20 v5 h-20 z M24 21 h16 v6 h-16 z M22 29 h20 v5 h-20 z M32 2 v36\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"assise",l:"Assise",c:"#c4008f",i:"<path d=\"M12 12 q6 -6 24 -2 q10 2 16 0 q2 4 -4 6 q-14 4 -30 2 q-8 -1 -6 -6 z M32 18 l-2 18 M26 36 h8\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"poste",l:"Poste de pilotage",c:"#2a9d8f",i:"<path d=\"M6 12 h12 l6 16 h16 l6 -16 h12 M24 28 v4 h16 v-4\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"equipement",l:"Équipement cycliste",c:"#0b0b6b",i:"<path d=\"M10 28 q0 -20 22 -20 q20 0 22 18 l-6 2 q-14 -6 -38 0 z M20 12 l6 14 M32 9 l2 16 M44 12 l-2 13 M24 30 l-4 6\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"velo",l:"Vélo",c:"#b9b955",i:"<circle cx=\"14\" cy=\"26\" r=\"10\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"50\" cy=\"26\" r=\"10\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M14 26 L24 10 L42 10 L50 26 M24 10 L32 26 L42 10 M32 26 L14 26 M22 6 h6 M42 10 l-2 -5 h6\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"occasion",l:"Pièces occasion",c:"#3f8a73",i:"<path d=\"M20 10 a14 14 0 0 1 24 4 M46 6 v8 h-8 M44 30 a14 14 0 0 1 -24 -4 M18 34 v-8 h8\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M28 20 h8 M32 16 v8\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"services",l:"Services atelier et main d'œuvre",c:"#6f98b8",i:"<path d=\"M8 12 a5 5 0 0 1 8 -3 l-3 3 l2 2 l3 -3 a5 5 0 0 1 -3 8 h28 a5 5 0 0 1 -3 -8 l3 3 l2 -2 l-3 -3 a5 5 0 0 1 8 3 M8 30 a5 5 0 0 1 8 -3 h28 a5 5 0 0 1 8 3 a5 5 0 0 1 -8 3 h-28 a5 5 0 0 1 -8 -3\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"sorties",l:"Sorties et séjours",c:"#00a64a",i:"<rect x=\"20\" y=\"2\" width=\"24\" height=\"36\" rx=\"4\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M26 30 l4 -6 l-2 -6 l6 -4 l-2 -6 M30 24 l8 4\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"autres",l:"Autres services",c:"#f2b600",i:"<path d=\"M32 6 v28 M18 20 h28\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"32\" cy=\"20\" r=\"16\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"},{k:"sanscat",l:"À classer",c:"#7a8594",i:"<path d=\"M24 14 a8 8 0 1 1 10 8 q-2 1 -2 4 v2 M32 34 v1\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"}];
+const CATMAP=Object.fromEntries(CATS.map(x=>[x.k,x]));
+const CAT_ALIAS={roue:'pneumatique',pneu:'pneumatique',accessoire:'accessoires','vélo':'velo',velos:'velo','vélos':'velo','poste de pilotage':'poste',pilotage:'poste','équipement':'equipement','equipement cycliste':'equipement','équipement cycliste':'equipement',mdo:'services',revision:'services','révision':'services',service:'services',sortie:'sorties','séjours':'sorties',autre:'autres'};
+function catsOf(p){if(p.type==='service')return'services';if(p.type==='occasion')return'occasion';if(p.type==='acompte')return'autres';const c=String(p.cat||'').trim().toLowerCase();const k=CAT_ALIAS[c]||c;return CATMAP[k]?k:'sanscat'}
 const CAT_COLORS=['--c1','--c2','--c3','--c4','--c5','--c6','--c7'];
-function catColor(k){if(k==='services')return'var(--c6)';if(k==='occasion')return'var(--c4)';let h=0;for(const ch of k)h=(h*31+ch.charCodeAt(0))%997;return`var(${CAT_COLORS[h%5]})`}
-const catName=k=>k==='tous'?'Tous les articles':k==='services'?'Services atelier':k==='occasion'?'Occasion':catLabel(k);
+function catColor(k){return(CATMAP[k]||CATMAP.sanscat).c}
+const catName=k=>k==='tous'?'Tous les articles':(CATMAP[k]||CATMAP.sanscat).l;
 function renderGrid(){if(!$('#posGrid'))return;const d=derive();const counts={};d.prods.forEach(p=>{const k=catsOf(p);counts[k]=(counts[k]||0)+1});
   const keys=Object.keys(counts).sort((a,b)=>a==='services'?-1:b==='services'?1:a===''?1:b===''?-1:counts[b]-counts[a]);
   const q=norm(posQ.replace(/^\d+([.,]\d+)?\*/,''));const low=d.c.lowStock;const g=$('#posGrid'),h=$('#catTabs');
   if(!q&&!posCat){h.innerHTML=`<b>Catégories</b><span class="small muted">${d.prods.length} articles · touchez une catégorie</span>`;g.className='catgrid';
-    g.innerHTML=keys.map(k=>`<button class="catbtn" style="--cc:${catColor(k)}" data-act="cat" data-c="${esc(k)}"><b>${esc(catName(k))}</b><small>${counts[k]} article${counts[k]>1?'s':''}</small><i></i></button>`).join('')+`<button class="catbtn all" style="--cc:var(--muted)" data-act="cat" data-c="tous"><b>Tous les articles</b><small>${d.prods.length} articles</small></button>`;return}
+    const show=CATS.filter(x=>x.k!=='sanscat'||counts.sanscat);
+    g.innerHTML=show.map(x=>`<button class="catbtn ${x.k==='sorties'||x.k==='autres'?'wide':''} ${x.k==='sanscat'?'small':''}" style="--cc:${x.c}" data-act="cat" data-c="${x.k}"><b>${esc(x.l)}</b><svg viewBox="0 0 64 40" aria-hidden="true">${x.i}</svg><small>${counts[x.k]||0}</small></button>`).join('')+`<button class="catbtn all" data-act="cat" data-c="tous"><b>Tous les articles</b><small>${d.prods.length}</small></button>`;return}
   g.className='grid';
   h.innerHTML=q?`<button class="btn sm" data-act="catHome">← Catégories</button><b>Résultats</b><span class="small muted">« ${esc(posQ)} »</span>`:`<button class="btn" data-act="catHome">← Catégories</button><span style="width:12px;height:12px;border-radius:3px;background:${catColor(posCat)}"></span><b>${esc(catName(posCat))}</b><span class="small muted">${posCat==='tous'?d.prods.length:counts[posCat]||0} articles</span>`;
   let list=d.prods.filter(p=>(q||posCat==='tous'||catsOf(p)===posCat)&&(!q||norm(p.name).includes(q)||norm(p.code).includes(q)||norm(p.brand).includes(q)));
@@ -620,21 +636,38 @@ function ficheModal(id){const src=id?S.devis[id]:null;const nextNum='F'+String(O
   fd=src?JSON.parse(JSON.stringify(src)):{id:uid('F'),num:nextNum,date:today(),ts:Date.now(),status:'trier',clientCode:'',clientName:'',phone:'',bikeBrand:'',bikeType:'',serial:'',request:'',lines:[],discount:0,paid:false};
   const cl=Object.values(S.clients).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
   openModal(head((src?'Fiche ':'Nouvelle fiche ')+esc(fd.num),'Zone : '+(ST[fd.status].z||'sortie'))+`<div class="sh-b">
-   <h3>Client</h3><div class="fgrid"><label class="fl">Code client<input class="f mono" id="fCode" list="clList" value="${esc(fd.clientCode)}" placeholder="ex. C099"></label><label class="fl">Nom<input class="f" id="fName" value="${esc(fd.clientName)}"></label><label class="fl">N° mobile<input class="f" id="fPhone" inputmode="tel" value="${esc(fd.phone)}"></label></div>
-   <datalist id="clList">${cl.map(c=>`<option value="${esc(c.code)}">${esc(c.name)} · ${esc(c.phone)}</option>`).join('')}</datalist>
+   <h3>Client</h3><div class="fgrid"><label class="fl">Code client<input class="f mono" id="fCode" value="${esc(fd.clientCode)}" placeholder="ex. C099" autocomplete="off"></label><label class="fl">Nom<input class="f" id="fName" value="${esc(fd.clientName)}"></label><label class="fl">N° mobile<input class="f" id="fPhone" inputmode="tel" value="${esc(fd.phone)}"></label></div>
+   <div class="sugg" id="fCliSugg" hidden></div>
    <div id="fLoyal"></div>
    <h3>Vélo</h3><div class="fgrid"><label class="fl">Marque du vélo<input class="f" id="fBrand" value="${esc(fd.bikeBrand)}"></label><label class="fl">Type de vélo<input class="f" id="fType" list="typeList" value="${esc(fd.bikeType)}"></label><label class="fl">N° de série<input class="f" id="fSerial" value="${esc(fd.serial)}"></label><label class="fl">Date d'entrée<input class="f" type="date" id="fDate" value="${esc(fd.date)}"></label></div>
    <datalist id="typeList">${['VTT','Route','Ville','VAE','BMX','Enfant','Pliant','Trottinette'].map(x=>`<option value="${x}">`).join('')}</datalist>
    <label class="fl">Demande du client<textarea class="f" id="fReq">${esc(fd.request)}</textarea></label>
    <label class="fl">Statut / zone<select class="f" id="fStatus">${ST_KEYS.map(k=>`<option value="${k}" ${fd.status===k?'selected':''}>${ST[k].l}${ST[k].z?' — '+ST[k].z:''}</option>`).join('')}</select></label>
    <h3>Travail effectué — devis</h3>
-   <div class="row" style="flex-wrap:nowrap"><input class="f mono" id="fAdd" list="prList" placeholder="Code article ou service, puis Entrée" autocomplete="off"><button class="btn" data-act="fAddLine">Ajouter</button></div>
-   <datalist id="prList">${derive().prods.map(p=>`<option value="${esc(p.code)}">${esc(p.name)} · ${fmt(p.price)}</option>`).join('')}</datalist>
+   <div class="pick"><div class="row" style="flex-wrap:nowrap"><input class="f" id="fAdd" placeholder="Chercher un article ou un service (nom ou code)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="btn" data-act="fBrowse">Catégories</button></div><div class="sugg" id="fSugg" hidden></div></div>
    <div id="fLines"></div>
    <div id="fDep"></div>
   </div><div class="sh-f">${src?'<button class="btn danger" data-act="delFiche">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="printDevis">Imprimer le devis</button><button class="btn" data-act="invFromFiche">${invoiceOf('devis',fd.id)?'Voir la facture':'Facture'}</button><button class="btn" data-act="saveFiche">Enregistrer</button>${fd.paid?'':'<button class="btn ok" data-act="cashFiche">Encaisser</button>'}</div>`,true);
   $('#fCode').addEventListener('change',()=>{const c=S.clients[U($('#fCode').value)];if(c){$('#fName').value=c.name;$('#fPhone').value=c.phone||'';if(c.bikeBrand&&!$('#fBrand').value)$('#fBrand').value=c.bikeBrand;if(c.bikeType&&!$('#fType').value)$('#fType').value=c.bikeType}renderFL()});
-  $('#fAdd').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ficheAddLine()}});renderFLines();renderFL()}
+  $('#fAdd').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ficheAddLine()}});
+  $('#fAdd').addEventListener('input',()=>fSuggest());
+  const cliIn=()=>cliSuggest();$('#fCode').addEventListener('input',cliIn);$('#fName').addEventListener('input',cliIn);
+  renderFLines();renderFL()}
+let fBrowseCat='';
+function fSuggest(){const el=$('#fSugg');if(!el)return;const q=norm($('#fAdd').value.trim());if(!q){el.hidden=true;el.innerHTML='';return}
+  const list=derive().prods.filter(p=>norm(p.name).includes(q)||norm(p.code).includes(q)||norm(p.brand).includes(q)).sort((a,b)=>(norm(b.code)===q)-(norm(a.code)===q)).slice(0,40);
+  el.innerHTML=list.length?list.map(prodLi).join(''):'<div class="empty small">Aucun article trouvé</div>';el.hidden=false}
+const prodLi=p=>`<button class="li" type="button" data-act="fPick" data-code="${esc(p.code)}"><span class="mono">${esc(p.code)}</span><b>${esc(p.name)}</b><span class="spacer"></span><span class="mono">${p.price>0?fmt(p.price):'prix ?'}</span></button>`;
+function fBrowse(cat){const el=$('#fSugg');if(!el)return;const d=derive();fBrowseCat=cat||'';
+  if(!fBrowseCat){const counts={};d.prods.forEach(p=>{const k=catsOf(p);counts[k]=(counts[k]||0)+1});const keys=CATS.map(x=>x.k).filter(k=>counts[k]);
+    el.innerHTML=`<div class="shead"><b>Choisir une catégorie</b><span class="spacer"></span><button class="btn sm" type="button" data-act="fBrowseClose">Fermer</button></div><div class="cats">${keys.map(k=>`<button type="button" style="--cc:${catColor(k)}" data-act="fBrowseCat" data-c="${esc(k)}">${esc(catName(k))}</button>`).join('')}</div>`}
+  else{const list=d.prods.filter(p=>catsOf(p)===fBrowseCat);el.innerHTML=`<div class="shead"><button class="btn sm" type="button" data-act="fBrowse">← Catégories</button><b>${esc(catName(fBrowseCat))}</b><span class="spacer"></span><button class="btn sm" type="button" data-act="fBrowseClose">Fermer</button></div>`+list.map(prodLi).join('')}
+  el.hidden=false;el.scrollTop=0}
+function cliSuggest(){const el=$('#fCliSugg');if(!el)return;const q=norm(($('#fName').value+' ')).trim(),qc=norm($('#fCode').value.trim());const qq=document.activeElement&&document.activeElement.id==='fCode'?qc:q;
+  if(!qq||qq.length<2){el.hidden=true;return}const list=Object.values(S.clients).filter(c=>norm(c.name).includes(qq)||norm(c.code).includes(qq)||norm(c.phone).includes(qq)).slice(0,8);
+  if(!list.length||(list.length===1&&U(list[0].code)===U($('#fCode').value)&&list[0].name===$('#fName').value)){el.hidden=true;return}
+  el.innerHTML=list.map(c=>`<button class="li" type="button" data-act="fCliPick" data-code="${esc(c.code)}"><span class="mono">${esc(c.code)}</span><b>${esc(c.name)}</b><span class="spacer"></span><span class="mono">${esc(c.phone||'')}</span></button>`).join('');el.hidden=false}
+function fillClient(code){const c=S.clients[U(code)];if(!c)return;$('#fCode').value=c.code;$('#fName').value=c.name;$('#fPhone').value=c.phone||'';if(c.bikeBrand&&!$('#fBrand').value)$('#fBrand').value=c.bikeBrand;if(c.bikeType&&!$('#fType').value)$('#fType').value=c.bikeType;if(c.serial&&!$('#fSerial').value)$('#fSerial').value=c.serial;$('#fCliSugg').hidden=true;renderFL()}
 function renderFL(){const el=$('#fLoyal');if(!el)return;const code=U($('#fCode').value);if(!code){el.innerHTML='';return}const L=loyal(code);const c=cfg();
   el.innerHTML=`<div class="row small"><span class="chip acc">Carte fidélité</span><span class="mono">${Math.floor(L.pts)} points</span>${L.rewards>0?`<span class="chip ok">${L.rewards} récompense(s) −${c.rewardPct} % disponible(s)</span>`:L.pts>0?`<span class="muted">Encore ${fmt(L.toNext).replace(/,?0+$/,'')} point(s) avant −${c.rewardPct} %</span>`:'<span class="muted">Aucun point</span>'}${S.clients[code]?'':'<span class="chip warn">Nouveau client : créé à l\'enregistrement</span>'}</div>`}
 function readFiche(){fd.clientCode=U($('#fCode').value);fd.clientName=$('#fName').value.trim();fd.phone=$('#fPhone').value.trim();fd.bikeBrand=$('#fBrand').value.trim();fd.bikeType=$('#fType').value.trim();fd.serial=$('#fSerial').value.trim();fd.date=$('#fDate').value||today();fd.request=$('#fReq').value.trim();fd.status=$('#fStatus').value;const dv=$('#fDisc');if(dv)fd.discount=r3(pnum(dv.value)||0);
@@ -660,8 +693,8 @@ function saveDeposit(){const amt=r3(pnum($('#depIn').value));if(!(amt>0))return 
   const tk={id:uid('T'),v:2,device:DEVICE,kind:'acompte',num:d.valid.filter(x=>x.date===date&&(x.device||'')===DEVICE).length+1,date,ts:Date.now(),lines:[{code:'ACOMPTE',name:'Acompte fiche '+dv.num+(dv.clientName?' · '+dv.clientName:''),price:amt,qty:1,disc:0,type:'acompte',cat:''}],sub:amt,discPct:0,discAmt:0,discount:0,total:amt,
     method:payMethod,received:amt,change:0,clientCode:U(dv.clientCode),clientName:dv.clientName||'',reward:false,devisId:dv.id,devisNet:net,note:''};
   put('tickets',tk.id,tk);closeModal();showReceipt(tk.id,true)}
-function ficheAddLine(){const inp=$('#fAdd');const v=inp.value.trim();if(!v)return;let p=findProduct(v.split(' ')[0]);if(!p){const n=norm(v);const r=derive().prods.filter(x=>norm(x.name).includes(n));if(r.length===1)p=r[0]}
-  if(!p)return toast('Code inconnu : '+v);readFiche();const ex=fd.lines.find(l=>l.code===p.code);if(ex)ex.qty++;else fd.lines.push({code:p.code,name:p.name,price:p.price,qty:1,disc:0,cost:p.cost??null,cat:p.cat||'',type:p.type||'produit'});inp.value='';renderFLines();inp.focus()}
+function ficheAddLine(code){const inp=$('#fAdd');const v=code||inp.value.trim();if(!v)return;let p=findProduct(code||v.split(' ')[0]);if(!p){const n=norm(v);const r=derive().prods.filter(x=>norm(x.name).includes(n));if(r.length===1)p=r[0]}
+  if(!p)return toast('Code inconnu : '+v);readFiche();const ex=fd.lines.find(l=>l.code===p.code);if(ex)ex.qty++;else fd.lines.push({code:p.code,name:p.name,price:p.price,qty:1,disc:0,cost:p.cost??null,cat:p.cat||'',type:p.type||'produit'});inp.value='';renderFLines();const sg=$('#fSugg');if(sg&&!fBrowseCat){sg.hidden=true}toast(p.name+' ajouté'+(p.price>0?'':' · indiquez le prix dans le tableau'))}
 function saveFiche(silent){readFiche();if(!fd.clientName&&!fd.bikeBrand&&!fd.request&&!fd.lines.length){toast('Fiche vide : renseignez au moins le client ou le vélo');return false}
   if(fd.clientName&&!fd.clientCode)fd.clientCode=newClientCode(fd.phone);
   if(fd.clientCode){const ex=S.clients[fd.clientCode];const c={...(ex||{code:fd.clientCode,rewardsUsed:0,created:today()}),name:fd.clientName||(ex&&ex.name)||fd.clientCode,phone:fd.phone||(ex&&ex.phone)||''};if(fd.bikeBrand)c.bikeBrand=fd.bikeBrand;if(fd.bikeType)c.bikeType=fd.bikeType;if(fd.serial)c.serial=fd.serial;
@@ -686,8 +719,7 @@ function productModal(code){const p=code?(derive().prods.find(x=>x.code===code)|
    <label class="fl">Code<input class="f mono" id="pCode" value="${esc(x.code)}" placeholder="ex. P120 ou S040" ${p?'':'autofocus'}></label>
    <label class="fl">Type<select class="f" id="pType">${Object.entries(TYPES).map(([k,l])=>`<option value="${k}" ${x.type===k?'selected':''}>${l}</option>`).join('')}</select></label></div>
    <label class="fl">Désignation<input class="f" id="pName" value="${esc(x.name)}"></label>
-   <div class="fgrid"><label class="fl">Catégorie<input class="f" id="pCat" list="catList" value="${esc(x.cat)}"></label><label class="fl">Marque<input class="f" id="pBrand" value="${esc(x.brand)}"></label></div>
-   <datalist id="catList">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+   <div class="fgrid"><label class="fl">Catégorie<select class="f" id="pCat">${CATS.filter(c=>c.k!=='sanscat').map(c=>`<option value="${c.k}" ${catsOf({cat:x.cat})===c.k?'selected':''}>${esc(c.l)}</option>`).join('')}<option value="" ${catsOf({cat:x.cat})==='sanscat'?'selected':''}>À classer</option></select></label><label class="fl">Marque<input class="f" id="pBrand" value="${esc(x.brand)}"></label></div>
    <div class="fgrid"><label class="fl">Prix d'achat (DT)<input class="f mono" id="pCost" inputmode="decimal" value="${x.cost!=null?String(x.cost).replace('.',','):''}"></label><label class="fl">Coefficient<input class="f mono" id="pCoef" inputmode="decimal" value="${x.coef?String(x.coef).replace('.',','):''}" placeholder="ex. 1,4"></label><label class="fl">Prix de vente (DT)<input class="f mono" id="pPrice" inputmode="decimal" value="${x.price?String(x.price).replace('.',','):''}"></label></div>
    <div class="small muted" id="pHint">Prix de vente = prix d'achat × coefficient (comme dans le fichier Excel). Vous pouvez le saisir directement.</div>
    <div class="fgrid"><label class="fl">Stock (vide = non suivi)<input class="f mono" id="pStock" inputmode="decimal" value="${x.stock!=null&&x.stock!==''?String(x.stock).replace('.',','):''}"></label><div class="row" style="align-self:end"><button class="btn sm" data-act="stockAdj" data-v="-1">−1</button><button class="btn sm" data-act="stockAdj" data-v="1">+1</button><button class="btn sm" data-act="stockAdj" data-v="5">+5</button><button class="btn sm" data-act="stockAdj" data-v="10">+10</button></div></div>
@@ -765,7 +797,7 @@ V.rapports={build(el){el.innerHTML=`<div class="view"><div class="row"><h1>Rappo
   const tl=Object.entries(top).sort((a,b)=>b[1].v-a[1].v).slice(0,10);const mx=tl.length?tl[0][1].v:1;
   $('#rpTop').innerHTML=tl.map(([c,v])=>`<div class="hbar"><span class="nm" title="${esc(v.name)}">${esc(v.name)}</span><span class="b"><i style="width:${v.v/mx*100}%"></i></span><span class="mono small">${fmt(v.v)}</span></div>`).join('')||'<div class="empty">Aucune vente sur la période.</div>';
   const cl=Object.entries(cats).sort((a,b)=>b[1]-a[1]);const mc=cl.length?cl[0][1]:1;
-  $('#rpCat').innerHTML=cl.map(([c,v])=>`<div class="hbar"><span class="nm">${esc(c==='services'?'Services':c==='occasion'?'Occasion':catLabel(c))}</span><span class="b"><i style="width:${v/mc*100}%;background:${catColor(c)}"></i></span><span class="mono small">${fmt(v)}</span></div>`).join('')||'<div class="empty">Aucune vente sur la période.</div>'}};
+  $('#rpCat').innerHTML=cl.map(([c,v])=>`<div class="hbar"><span class="nm">${esc(catName(c))}</span><span class="b"><i style="width:${v/mc*100}%;background:${catColor(c)}"></i></span><span class="mono small">${fmt(v)}</span></div>`).join('')||'<div class="empty">Aucune vente sur la période.</div>'}};
 function barChart(arr){if(!arr.length)return'<div class="empty">Aucune donnée.</div>';const W=Math.max(arr.length*16,(($('#rpChart')||{}).clientWidth||900)),H=240,pl=46,pb=26,pt=10;const mx=Math.max(...arr.map(a=>a[1]),1);const step=niceStep(mx);const top=Math.ceil(mx/step)*step;const bw=(W-pl-8)/arr.length;
   let g='';for(let v=0;v<=top+1e-9;v+=step){const y=pt+(H-pt-pb)*(1-v/top);g+=`<line x1="${pl}" x2="${W-4}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${pl-6}" y="${y+3}" text-anchor="end">${Math.round(v)}</text>`}
   const every=Math.ceil(arr.length/12);arr.forEach(([d,v],i)=>{const h=(H-pt-pb)*(v/top);const x=pl+i*bw+bw*0.15;g+=`<rect x="${x}" y="${H-pb-h}" width="${Math.max(1,bw*0.7)}" height="${Math.max(0,h)}" rx="2" fill="${d===today()?'var(--ok)':'var(--accent)'}"><title>${frD(d)} : ${fmt(v)} DT</title></rect>`;if(i%every===0)g+=`<text x="${x+bw*0.35}" y="${H-8}" text-anchor="middle">${d.slice(8,10)}/${d.slice(5,7)}</text>`});
@@ -912,7 +944,7 @@ const A={
  voidTicket:e=>{const id=e.dataset.id;ask('Annuler ce ticket ? Le stock des articles sera remis.','Annuler le ticket',()=>{const t=S.tickets[id];put('tickets',id,{...t,voided:true,voidedAt:Date.now()});if(!t.v)t.lines.forEach(l=>{const p=S.products[l.code];if(p&&p.stock!=null&&p.stock!=='')put('products',p.code,{...S.products[l.code],stock:r3(S.products[l.code].stock+l.qty)})});
    if(t.kind!=='acompte'&&t.devisId&&S.devis[t.devisId])put('devis',t.devisId,{...S.devis[t.devisId],paid:false,status:'pret',ticketId:''});if(!t.v&&t.reward&&S.clients[t.clientCode])put('clients',t.clientCode,{...S.clients[t.clientCode],rewardsUsed:Math.max(0,(S.clients[t.clientCode].rewardsUsed||0)-1)});closeModal();toast('Ticket annulé')})},
  newFiche:()=>ficheModal(),editFiche:e=>ficheModal(e.dataset.id),
- fAddLine:ficheAddLine,fDelLine:e=>{readFiche();fd.lines.splice(+e.dataset.i,1);renderFLines()},
+ fAddLine:()=>ficheAddLine(),fPick:e=>ficheAddLine(e.dataset.code),fBrowse:()=>fBrowse(''),fBrowseCat:e=>fBrowse(e.dataset.c),fBrowseClose:()=>{const s=$('#fSugg');s.hidden=true;fBrowseCat=''},fCliPick:e=>fillClient(e.dataset.code),fDelLine:e=>{readFiche();fd.lines.splice(+e.dataset.i,1);renderFLines()},
  saveFiche:()=>saveFiche(),
  delFiche:()=>depositSum(fd.id)&&!fd.paid?toast('Cette fiche a un acompte : annulez-le d\'abord (onglet Caisse) ou encaissez la fiche.'):ask('Supprimer la fiche '+fd.num+' ?','Supprimer',()=>{del('devis',fd.id);closeModal()}),
  dlDevis:()=>{readFiche();download('devis-'+fd.num+'-'+(fd.clientName||'client').replace(/\W+/g,'-')+'.html',devisDoc(fd),'text/html')},
@@ -969,7 +1001,7 @@ go(view);
   bump();await countOutbox();
   if(!session&&sbUrl!==undefined)loginModal();else{await runSync();firstRunCheck()}
 })();
-if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').then(reg=>{reg.addEventListener('updatefound',()=>{const w=reg.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)toast('Nouvelle version installée : elle sera active au prochain lancement.')})})}).catch(e=>console.error(e));
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').then(reg=>{reg.addEventListener('updatefound',()=>{const w=reg.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)toast('Nouvelle version prête : fermez et rouvrez la caisse pour l\'utiliser.')})})}).catch(e=>console.error(e));
 </script>
 
 </body>
