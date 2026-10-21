@@ -897,7 +897,7 @@ V.factures={build(el){el.innerHTML=`<div class="view"><div class="row"><h1>Factu
 const IMP_LIB={tess:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',pdf:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',pdfw:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'};
 const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector('script[data-src="'+src+'"]'))return res();const s=document.createElement('script');s.src=src;s.dataset.src=src;s.onload=res;s.onerror=()=>rej(new Error('Chargement impossible : vérifiez la connexion internet.'));document.head.appendChild(s)});
 let imp=null;
-const IMP_SKIP=/\b(total|totaux|tva|t\.v\.a|timbre|net\s*[àa]\s*payer|montant|sous[- ]?total|arr[eê]t[ée]e?|facture\s*n|date|client|t[ée]l|fax|mf\b|matricule|code\s*tva|rib|banque|page|bon\s*de|livraison|r[èe]glement|esp[èe]ce|ch[èe]que|base|cachet|signature|capital|adresse|registre|r\.?c\b)/i;
+const IMP_SKIP=/\b(modalit[ée]|effectu[ée]e|total|totaux|tva|t\.v\.a|timbre|net\s*[àa]\s*payer|montant|sous[- ]?total|arr[eê]t[ée]e?|facture\s*n|date|client|t[ée]l|fax|mf\b|matricule|code\s*tva|rib|banque|page|bon\s*de|livraison|r[èe]glement|esp[èe]ce|ch[èe]que|base|cachet|signature|capital|adresse|registre|r\.?c\b)/i;
 const IMP_JUNK=/^[\[\](){}'"`*:;]+|[\[\](){}'"`*:;]+$/g;
 function impNum(s){s=String(s).replace(/[\s ]/g,'').replace(IMP_JUNK,'').replace(/[Oo]/g,'0').replace(/[lI|]/g,'1').replace(/%$/,'');if(!/^-?\d[\d.,]*$/.test(s))return null;
   if(/^0\d{3}$/.test(s))s='0.'+s.slice(1);
@@ -915,23 +915,59 @@ function impParseLine(line){let colRef='';const cols=String(line).replace(/[|¦]
   if(descToks.length>1&&/^[A-Za-z0-9\-_/.]{3,}$/.test(descToks[0])&&(/\d/.test(descToks[0])||(/[-_/]/.test(descToks[0])&&descToks[0]===descToks[0].toUpperCase())))ref=descToks.shift();
   if(colRef&&!ref)ref=colRef;let desc=descToks.join(' ').replace(/^[-–:.\s]+|[-–:.\s]+$/g,'');
   if((desc.match(/[A-Za-zÀ-ÿ]/g)||[]).length<3||!nums.length)return null;if(IMP_SKIP.test(desc))return null;
-  const vals=nums.map(n=>n.v);let qty=null,pu=null,total=null,si=-1;
-  for(let i=0;i<vals.length&&qty===null;i++)for(let j=i+1;j<vals.length&&qty===null;j++)for(let m=j+1;m<vals.length;m++){const a=vals[i],b=vals[j],t=vals[m];if(!t)continue;
-    const rems=[0,...vals.filter((x,ix)=>ix>j&&ix<m&&x>0&&x<100)];for(const r of rems){const calc=a*b*(1-r/100);if(Math.abs(calc-t)<=Math.max(0.011,t*0.015)){const [q,p]=(Number.isInteger(a)&&a<=1000)||!Number.isInteger(b)?[a,b]:[b,a];qty=q;pu=p;total=t;si=i;break}}if(qty!==null)break}
-  if(qty===null){const clean=nums.filter(n=>!n.pct).map(n=>n.v);
+  const vals=nums.map(n=>n.v);const F=impFind(vals);
+  let qty,pu,total,si,rem,ok;
+  if(F){({qty,pu,total,si,rem}=F);ok=!F.guess}
+  else{const clean=nums.filter(n=>!n.pct).map(n=>n.v);ok=false;rem=0;
     if(clean.length>=2){const q=clean.find(x=>Number.isInteger(x)&&x>0&&x<=500);qty=q||1;const rest=clean.filter(x=>x!==qty);pu=rest[0]??clean[1];total=r3(qty*pu)}
-    else{qty=1;pu=clean[0]??vals[0];total=pu}}
-  const trip=si>=0;if(si<0)si=Math.max(0,nums.length-(nums.length>=3?3:nums.length));if(si>0){desc=(desc+' '+nums.slice(0,si).map(n=>n.t).join(' ')).trim()}
-  const ok=trip&&total!=null&&Math.abs(qty*pu-total)<=Math.max(0.011,total*0.02)&&nums.length>=3;if(!(qty>0)||!(pu>0))return null;return{ref,desc,qty:r3(qty),pu:r3(pu),total:r3(total||qty*pu),src:raw,ok}}
+    else{qty=1;pu=clean[0]??vals[0];total=pu}
+    si=Math.max(0,nums.length-(nums.length>=3?3:nums.length))}
+  if(si>0){desc=(desc+' '+nums.slice(0,si).map(n=>n.t).join(' ')).trim()}
+  if(!(qty>0)||!(pu>0))return null;if(rem>0&&total)pu=total/qty;return{ref,desc,qty:r3(qty),pu:r3(pu),rem,total:r3(total||qty*pu),src:raw,ok:!!ok&&nums.length>=3}}
+/* recherche quantité × prix (× remise) = total, en tolérant les erreurs de lecture courantes */
+function impFind(vals){const close=(x,t)=>Math.abs(x-t)<=Math.max(0.011,t*0.012);
+  const V=v=>{const a=[v];if(Number.isInteger(v)&&v>=1000&&v<1e7)a.push(v/1000);return a};
+  const R=v=>{const a=[];if(v>0&&v<100)a.push(v);if(Number.isInteger(v)&&v>=100&&v<10000&&v%100===0)a.push(v/100);return a};
+  const remsBetween=(j,m)=>{const a=[0];for(let x=j+1;x<m;x++)a.push(...R(vals[x]));return a};
+  for(let i=0;i<vals.length;i++)for(let j=i+1;j<vals.length;j++)for(let m=j+1;m<vals.length;m++){const rems=remsBetween(j,m);
+    for(const a of V(vals[i]))for(const b of V(vals[j]))for(const t of V(vals[m])){if(!t)continue;for(const r of rems){if(close(a*b*(1-r/100),t)){const [q,p]=(Number.isInteger(a)&&a<=1000)||!Number.isInteger(b)?[a,b]:[b,a];return{qty:q,pu:p,total:t,rem:r,si:i}}}}}
+  // quantité illisible : on la déduit du prix et du total (si elle tombe juste)
+  for(let j=0;j<vals.length;j++)for(let m=j+1;m<vals.length;m++){const rems=remsBetween(j,m);if(rems.length<2)continue;
+    for(const b of V(vals[j]))for(const t of V(vals[m])){if(!(b>0)||!(t>0)||Number.isInteger(t)&&t>=1000)continue;for(const r of rems.slice(1)){const q=t/(b*(1-r/100));if(q>=1&&q<=1000&&Math.abs(q-Math.round(q))<0.01)return{qty:Math.round(q),pu:b,total:t,rem:r,si:j}}}}
+  // prix illisible : quantité + remise + total connus → prix déduit, à vérifier
+  if(Number.isInteger(vals[0])&&vals[0]>=1&&vals[0]<=1000)for(let x=2;x<vals.length-1;x++){const rs=R(vals[x]);if(!rs.length)continue;const ts=V(vals[x+1]).filter(t=>!(Number.isInteger(t)&&t>=1000));if(!ts.length)continue;
+    const r=rs[rs.length-1],t=ts[ts.length-1];return{qty:vals[0],pu:t/(vals[0]*(1-r/100)),total:t,rem:r,si:0,guess:true}}
+  return null}
+function impParseRows(lines){const items=[],nums=[];let cur=null;
+  const startRe=/^(?:(\d{1,3})\s+(\S{3,})|([A-Za-z]{1,8}\d[\w\-/.]*))\s+(.*[A-Za-zÀ-ÿ]{2,}.*)$/;
+  for(const line0 of lines){if(items.length&&/(arr[eê]t[ée]e?\s+la|modalit[ée]|brut\s*h\.?t|net\s*t\.?t\.?c|timbre\s*fiscal|^\s*page\s*\d)/i.test(line0))break;
+    const line=String(line0).replace(/^[^A-Za-z0-9]+/,'');let r=impParseLine(line);let head;
+    if(r&&(r.ok||r.qty>0&&r.rem>0)){if(items.length||(head=((r.ref?r.ref+' ':'')+r.desc).trim()).match(startRe))nums.push(r);head=((r.ref?r.ref+' ':'')+r.desc).trim()}
+    else{const z=impParseLine('ZZQ '+line);if(z&&z.ok&&items.length&&!/[A-Za-zÀ-ÿ]{2,}/.test(line)){nums.push(z);head=''}else head=String(line).replace(/[|¦]/g,' ').replace(/\s+/g,' ').trim()}
+    if(!head)continue;head=head.replace(/^[^A-Za-z0-9]+/,'');const m=head.match(startRe);
+    if(m&&!IMP_SKIP.test(m[4])){cur={ref:(m[2]||m[3]).toUpperCase(),desc:m[4].replace(/^[^A-Za-z0-9À-ÿ]+/,'').trim()};items.push(cur)}
+    else if(cur&&(/[A-Za-zÀ-ÿ]{2,}/.test(head)||/^[\dA-Za-z*xX.,/\-]{4,20}$/.test(head)&&/\d/.test(head))&&!IMP_SKIP.test(head)&&head.length<60)cur.desc+=' '+head.replace(/^\d{1,3}\s+/,'').replace(/[\\_»«|]+/g,' ')}
+  if(items.length<2||!nums.length)return null;const same=items.length===nums.length;
+  return items.map((it,i)=>{const n=nums[i];return n?{ref:it.ref,desc:it.desc.replace(/[\\_»«|]+/g,' ').replace(/\s+/g,' ').trim(),qty:n.qty,pu:n.pu,total:n.total,rem:n.rem,src:'',ok:same&&n.ok}:{ref:it.ref,desc:it.desc,qty:1,pu:0.001,total:0,src:'',ok:false}})}
+function impWords(t){const U={zero:0,un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,vingt:20,vingts:20,trente:30,quarante:40,cinquante:50,soixante:60};
+  const w=norm(t).replace(/-/g,' ').replace(/\bet\b/g,' ').split(/\s+/).filter(Boolean);if(!w.length)return null;let total=0,cur=0;
+  for(let i=0;i<w.length;i++){const x=w[i];if(x in U){let v=U[x];if((x==='quatre')&&/^vingts?$/.test(w[i+1]||'')){v=80;i++}if(v===10&&cur%100>=60&&cur%10===0&&(cur%100===60||cur%100===80))cur+=10;else cur+=v}
+    else if(x==='cent'||x==='cents'){cur=(cur||1)*100}else if(x==='mille'){total+=(cur||1)*1000;cur=0}else if(/^millions?$/.test(x)){total+=(cur||1)*1e6;cur=0}else return null}
+  return total+cur}
 function impParseText(text){const lines=String(text).split(/\r?\n/).map(l=>l.trim()).filter(Boolean);let start=0,end=lines.length;
   const h=lines.findIndex(l=>/(d[ée]signation|libell[ée]|article|description|produit)/i.test(l)&&/(qt[ée]|quantit|prix|p\.?u|montant)/i.test(l));if(h>=0)start=h+1;
   for(let i=start;i<lines.length;i++){if(/^\s*(total|sous[- ]?total|net\s*[àa]\s*payer|montant\s*total|total\s*h\.?t)/i.test(lines[i])){end=i;break}}
-  const out=[];for(const l of lines.slice(start,end)){const r=impParseLine(l);if(r)out.push(r)}
-  let supplier='';const firstTxt=lines.slice(0,Math.max(1,h>=0?h:5)).find(l=>(l.match(/[A-Za-zÀ-ÿ]/g)||[]).length>=4&&!/factur|date|client/i.test(l));if(firstTxt)supplier=firstTxt.slice(0,60);
+  let out=[];for(const l of lines.slice(start,end)){const r=impParseLine(l);if(r)out.push(r)}
+  const alt=impParseRows(lines.slice(start,end));if(alt&&alt.length>=2&&alt.length>=out.filter(x=>x.ok).length)out=alt;
+  let supplier='';const nt=norm(text);const known=(typeof supList==='function'?supList():[]).find(x=>x.key&&nt.replace(/[^a-z0-9]+/g,' ').includes(x.key));
+  if(known)supplier=known.name;else{const fi=lines.findIndex(l=>/factur|client/i.test(l));const top=lines.slice(0,fi>0?fi:Math.min(lines.length,12)).map(l=>l.split(/\s{3,}/)[0].replace(/^[^A-Za-zÀ-ÿ]+/,'').replace(/^[A-Za-z]{1,2}\s+/,'').trim());
+    const c=top.find(l=>/\b(st[eé]|soci[eé]t[eé]|sarl|suarl|ets|établissements?)\b/i.test(l)&&!/client|factur/i.test(l))||top.find(l=>/^[A-ZÀ-Ý0-9 &'.\-]{6,}$/.test(l)&&(l.match(/[A-ZÀ-Ý]{3,}/g)||[]).length>=2&&!/\d{3,}|factur|client|tva|douane/i.test(l));if(c)supplier=c.replace(/^(st[eé]|soci[eé]t[eé])\s+/i,'').slice(0,60)}
   const refm=String(text).match(/facture\s*(?:n[°o.]*|num[ée]ro)\s*[:\-]?\s*([A-Z0-9\-/]+)/i);
   const dm=String(text).match(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4}|\d{2})\b/);let date='';if(dm){const y=dm[3].length===2?'20'+dm[3]:dm[3];const mo=+dm[2],da=+dm[1];if(mo>=1&&mo<=12&&da>=1&&da<=31)date=y+'-'+String(mo).padStart(2,'0')+'-'+String(da).padStart(2,'0')}
-  let amount=null;for(const re of [/net\s*[àa]\s*payer/i,/total\s*t\.?t\.?c/i,/montant\s*total/i]){const l=lines.find(x=>re.test(x));if(l){const nums=l.split(/\s+/).map(impNum).filter(v=>v!==null&&v>0);if(nums.length){amount=nums[nums.length-1];break}}}
-  return{lines:out,supplier,ref:refm?refm[1]:'',date,amount}}
+  let amount=null;for(const re of [/net\s*[àa]\s*payer/i,/net\s*t\.?t\.?c/i,/total\s*t\.?t\.?c/i,/montant\s*total/i]){for(const l of lines.filter(x=>re.test(x)).reverse()){const tail=l.split(re).pop();const nums=tail.split(/\s+/).map(impNum).filter(v=>v!==null&&v>0);if(nums.length){amount=nums[0];break}}if(amount!=null)break}
+  if(amount==null){const w=String(text).match(/somme\s+de\s*:?\s*([a-zà-ÿ\s\-]+?)\s+dinars?(?:\s+(?:et\s+)?(\d{1,3}|[a-zà-ÿ\s\-]+?)\s+millimes?)?/i);if(w){const d=impWords(w[1]);if(d!=null){const m=w[2]?(/^\d+$/.test(w[2])?+w[2]:impWords(w[2])||0):0;amount=r3(d+m/1000)}}}
+  const sumL=out.reduce((x,l)=>x+l.qty*l.pu,0);const tvaCol=lines.filter(l=>/\b19[,.]00\b|\b19\s*%/.test(l)).length>=2;
+  const ht=/(p\.?\s*u(nit)?\.?\s*h\.?t|net\s*h\.?t|total\s*h\.?t|prix\s*h\.?t)/i.test(text)||tvaCol||(amount!=null&&sumL>0&&Math.abs(sumL*1.19-amount)<=amount*0.03+1.5);return{lines:out,supplier,ref:refm?refm[1]:'',date,amount,ht}}
 function impParseXML(txt){const doc=new DOMParser().parseFromString(txt,'application/xml');if(doc.querySelector('parsererror'))throw new Error('Fichier XML illisible');
   const all=[...doc.getElementsByTagName('*')];const lname=e=>e.localName||e.nodeName;
   let linNodes=all.filter(e=>/^(Lin|InvoiceLine|LigneFacture|Ligne|Line|Item)$/i.test(lname(e)));if(!linNodes.length)throw new Error('Aucune ligne d\'article trouvée dans le XML');
@@ -955,9 +991,10 @@ async function impPDF(file,onP){await loadScript(IMP_LIB.pdf);pdfjsLib.GlobalWor
     const rows=[];items.forEach(i=>{const y=Math.round(i.transform[5]),x=i.transform[4];let r=rows.find(r=>Math.abs(r.y-y)<=3);if(!r){r={y,it:[]};rows.push(r)}r.it.push({x,s:i.str,w:i.width})});
     rows.sort((a,b)=>b.y-a.y).forEach(r=>{r.it.sort((a,b)=>a.x-b.x);let line='',lx=null;r.it.forEach(t=>{if(lx!==null&&t.x-lx>8)line+='  ';else if(lx!==null)line+=' ';line+=t.s;lx=t.x+t.w});out.push(line)})}
   return out.join('\n')}
-const IMP_GUESS=[['pneumatique',/(pneu|chambre|jante|rayon|valve|tubeless|fond de jante|roue|moyeu)/],['transmission',/(cha[iî]ne|cassette|d[ée]railleur|p[ée]dalier|manivelle|plateau|bo[iî]tier|roue libre|pignon|galet|c[aâ]ble de vitesse|gaine de vitesse)/],
- ['freinage',/(frein|patin|plaquette|disque|[ée]trier|levier)/],['assise',/(selle|tige de selle|collier de selle|couvre selle)/],['poste',/(guidon|potence|poign[ée]e|guidoline|manette|cocotte|embout)/],['direction',/(direction|fourche|douille|cuvette|jeu de)/],
- ['cadre',/\bcadre/],['equipement',/(casque|gant|maillot|cuissard|lunette|chaussure|veste|chaussette|sac [àa] dos)/],['velo',/\b(v[ée]lo|vtt|vtc|bmx|trottinette)\b/],['accessoires',/./]];
+const IMP_GUESS=[['pneumatique',/(pneu|chambre|\bair\b|jante|rayon|valve|tubeless|fond de jante|roue|moyeu)/],['freinage',/(frein|patin|plaquette|disque|[ée]trier)/],
+ ['transmission',/(cha[iî]ne|cassette|d[ée]railleur|p[ée]dalier|p[ée]dale|manivelle|plateau|bo[iî]t(ier|e)|roue libre|pignon|galet|c[aâ]ble\s*(de\s*)?vitesse|gaine\s*(de\s*)?vitesse|roulement)/],
+ ['assise',/(selle|tige de selle|collier de selle)/],['poste',/(guidon|potence|poign[ée]e|guidoline|manette|cocotte|embout)/],['direction',/(direction|fourche|douille|cuvette|jeu de direction)/],
+ ['cadre',/\bcadre/],['equipement',/(casque|gant|maillot|cuissard|lunette|chaussure|veste|chaussette)/],['velo',/^(v[ée]lo|vtt|vtc|bmx|trottinette)\b/],['accessoires',/./]];
 const impGuessCat=d=>{const n=norm(d);for(const [k,re] of IMP_GUESS)if(re.test(n))return k;return'accessoires'};
 const impTok=s=>new Set(norm(s).replace(/(\d)\s*[x×*]\s*(\d)/g,'$1 $2').replace(/[^a-z0-9]+/g,' ').split(' ').filter(w=>w.length>=2&&!['de','du','la','le','les','et','pour','en','a'].includes(w)));
 function impMatches(desc){const a=impTok(desc);if(!a.size)return[];return derive().prods.filter(p=>p.type!=='service'&&p.type!=='occasion'&&p.type!=='acompte').map(p=>{const b=impTok(p.name);let inter=0;a.forEach(w=>{if(b.has(w))inter++});return{p,s:inter/Math.max(a.size,b.size)}}).filter(x=>x.s>=0.34).sort((x,y)=>y.s-x.s).slice(0,5)}
@@ -977,9 +1014,10 @@ async function impRun(file){const sup=$('#imSup').value.trim(),ref=$('#imRef').v
   else if(/^text\//.test(file.type)||name.endsWith('.txt')){raw=await file.text();res=impParseText(raw)}
   else{impStatus('Préparation de la photo…');const cv=await impPrepImage(file);raw=await impOCR(cv,impStatus);res=impParseText(raw)}
   impReview(res,raw,sup||res.supplier,ref||res.ref)}catch(err){console.error(err);impStatus('<span style="color:var(--bad)">'+esc(err.message||'Lecture impossible')+'</span>')}}
-function impReview(res,raw,sup,ref){const c=cfg();const known=supCanon(sup);imp={step:2,raw,sup:known||sup,ref,date:res.date||today(),amount:res.amount??null,coef:+c.defCoef||1.4,addTva:false,
+function impReview(res,raw,sup,ref){const c=cfg();const known=supCanon(sup);imp={step:2,raw,sup:known||sup,ref,date:res.date||today(),amount:res.amount??null,coef:+c.defCoef||1.4,addTva:!!res.ht,
   lines:res.lines.map(l=>{const m=impMatches(l.desc);return{on:true,ok:l.ok!==false&&l.pu<5000,desc:l.desc,ref:l.ref,qty:l.qty,cost:l.pu,cat:impGuessCat(l.desc),match:m.length&&m[0].s>=0.85?m[0].p.code:'',cands:m.map(x=>x.p.code),price:null}})};
   impRender()}
+const impCostStored=c=>r3(c*(imp.addTva?1+(+cfg().tva||19)/100:1));
 const impSale=l=>l.price!=null?l.price:r3(l.cost*(imp.addTva?1+(+cfg().tva||19)/100:1)*imp.coef);
 function impRender(){const L=imp.lines;const nNew=L.filter(l=>l.on&&!l.match).length,nOld=L.filter(l=>l.on&&l.match).length;const tot=r3(L.filter(l=>l.on).reduce((s,l)=>s+l.qty*l.cost,0));
   openModal(head('Vérifier l\'import',esc(imp.sup||'Fournisseur')+(imp.ref?' · facture '+esc(imp.ref):'')+' · '+L.length+' ligne(s) lue(s)')+`<div class="sh-b">
@@ -988,7 +1026,7 @@ function impRender(){const L=imp.lines;const nNew=L.filter(l=>l.on&&!l.match).le
    <div id="imHSupSug"></div></div>
   ${L.length?'':'<div class="banner">Aucune ligne d\'article reconnue. Vérifiez le texte lu ci-dessous, reprenez une photo plus nette, ou ajoutez les lignes à la main.</div>'}
   <div class="row" style="gap:16px"><label class="row small" style="gap:6px">Coefficient de vente <input class="f mono" id="imCoef" inputmode="decimal" style="width:80px" value="${String(imp.coef).replace('.',',')}"></label>
-   <label class="row small" style="gap:8px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" id="imTva" style="width:20px;height:20px;flex:none" ${imp.addTva?'checked':''}> Prix de la facture HT : ajouter la TVA ${cfg().tva} % avant le coefficient</label></div>
+   <label class="row small" style="gap:8px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" id="imTva" style="width:20px;height:20px;flex:none" ${imp.addTva?'checked':''}> Facture en HT : ajouter la TVA ${cfg().tva} % au prix d'achat (et donc au prix de vente)</label></div>
   <div class="imlist">${L.map((l,i)=>`<div class="imrow ${l.on?'':'off'}" data-i="${i}" ${l.ok===false?'style="border-color:var(--warn);background:var(--warn-soft)"':''}>
     <label class="imchk"><input type="checkbox" data-im="on" data-i="${i}" ${l.on?'checked':''}></label>
     <label class="fl imdesc">Désignation${l.ref?` <span class="mono">· réf. ${esc(l.ref)}</span>`:''}${l.ok===false?' <span class="chip warn">À vérifier : quantité × prix ≠ total lu</span>':''}<input class="f" data-im="desc" data-i="${i}" value="${esc(l.desc)}"></label>
@@ -1012,9 +1050,9 @@ function impSave(force){const dupe=imp.ref&&Object.values(S.purchases||{}).find(
   const d=derive();const now=Date.now();let nNew=0,nOld=0;const done=[];
   for(const l of imp.lines){if(!l.on||!(l.qty>0)||!l.desc)continue;
     if(l.match&&S.products[l.match]){const p=S.products[l.match];const cur=(d.prods.find(x=>x.code===p.code)||p).stock;const base=(cur==null||cur==='')?0:+cur;
-      put('products',p.code,{...p,stock:r3(base+l.qty),stockTs:now,cost:l.cost||p.cost,updated:now});nOld++;done.push({code:p.code,name:p.name,qty:l.qty,cost:l.cost,isNew:false})}
+      const cTTC=impCostStored(l.cost);put('products',p.code,{...p,stock:r3(base+l.qty),stockTs:now,cost:cTTC||p.cost,updated:now});nOld++;done.push({code:p.code,name:p.name,qty:l.qty,cost:cTTC,isNew:false})}
     else{const type=l.cat==='occasion'?'occasion':'produit';const code=nextProductCode(type);const price=impSale(l);
-      put('products',code,{code,name:l.desc,type,cat:l.cat,catv:2,brand:'',cost:l.cost,coef:imp.coef,price,stock:r3(l.qty),stockTs:now,zone:ZONES[l.cat]||'',supplier:imp.sup||'',supRef:l.ref||'',updated:now});nNew++;done.push({code,name:l.desc,qty:l.qty,cost:l.cost,isNew:true})}}
+      const cTTC=impCostStored(l.cost);put('products',code,{code,name:l.desc,type,cat:l.cat,catv:2,brand:'',cost:cTTC,coef:imp.coef,price,stock:r3(l.qty),stockTs:now,zone:ZONES[l.cat]||'',supplier:imp.sup||'',supRef:l.ref||'',updated:now});nNew++;done.push({code,name:l.desc,qty:l.qty,cost:cTTC,isNew:true})}}
   const id=uid('A');const tl=r3(done.reduce((s,x)=>s+x.qty*x.cost,0));put('purchases',id,{id,date:imp.date||today(),ts:now,supplier:supCanon(imp.sup)||imp.sup||'Fournisseur inconnu',ref:imp.ref||'',amount:imp.amount!=null?imp.amount:tl,total:tl,lines:done,source:'import',device:typeof DEVICE!=='undefined'?DEVICE:''});
   closeModal();imp=null;toast(`Import terminé : ${nNew} nouvel(s) article(s), ${nOld} stock(s) mis à jour`)}
 
