@@ -661,12 +661,12 @@ function ficheModal(id){const src=id?S.devis[id]:null;const nextNum='F'+String(O
    <div class="pick"><div class="row" style="flex-wrap:nowrap"><input class="f" id="fAdd" placeholder="Chercher un article ou un service (nom ou code)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="btn" data-act="fBrowse">Catégories</button></div><div class="sugg" id="fSugg" hidden></div></div>
    <div id="fLines"></div>
    <div id="fDep"></div>
-  </div><div class="sh-f">${src?'<button class="btn danger" data-act="delFiche">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="printDevis">Imprimer le devis</button><button class="btn" data-act="invFromFiche">${invoiceOf('devis',fd.id)?'Voir la facture':'Facture'}</button><button class="btn" data-act="saveFiche">Enregistrer</button>${fd.paid?'':'<button class="btn ok" data-act="cashFiche">Encaisser</button>'}</div>`,true);
+  </div><div class="sh-f">${src?'<button class="btn danger" data-act="delFiche">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="printDevis">Imprimer le devis</button><button class="btn ok" data-act="waReady" id="waReadyBtn" ${fd.status==='pret'?'':'hidden'}>📲 Prévenir le client</button><button class="btn" data-act="waDevis">📲 Envoyer le devis par WhatsApp</button><button class="btn" data-act="invFromFiche">${invoiceOf('devis',fd.id)?'Voir la facture':'Facture'}</button><button class="btn" data-act="saveFiche">Enregistrer</button>${fd.paid?'':'<button class="btn ok" data-act="cashFiche">Encaisser</button>'}</div>`,true);
   $('#fCode').addEventListener('change',()=>{const c=S.clients[U($('#fCode').value)];if(c){$('#fName').value=c.name;$('#fPhone').value=c.phone||'';if(c.bikeBrand&&!$('#fBrand').value)$('#fBrand').value=c.bikeBrand;if(c.bikeType&&!$('#fType').value)$('#fType').value=c.bikeType}renderFL()});
   $('#fAdd').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ficheAddLine()}});
   $('#fAdd').addEventListener('input',()=>fSuggest());
   const cliIn=()=>{const cc=U($('#fCode').value);const c=cc&&S.clients[cc];if(c&&$('#fName').value.trim()!==c.name){$('#fCode').value='';renderFL()}cliSuggest()};$('#fName').addEventListener('input',cliIn);$('#fPhone').addEventListener('input',()=>cliSuggest('phone'));
-  renderFLines();renderFL()}
+  $('#fStatus').addEventListener('change',waBtnSync);renderFLines();renderFL()}
 let fBrowseCat='';
 function fSuggest(){const el=$('#fSugg');if(!el)return;const q=norm($('#fAdd').value.trim());if(!q){el.hidden=true;el.innerHTML='';return}
   const list=derive().prods.filter(p=>norm(p.name).includes(q)||norm(p.code).includes(q)||norm(p.brand).includes(q)).sort((a,b)=>(norm(b.code)===q)-(norm(a.code)===q)).slice(0,40);
@@ -1336,6 +1336,40 @@ function cgGroupDoc(list){const o=list[0];const tp=list.reduce((s,c)=>s+(+c.pric
   <p style="font-size:13px">Fait le ${frD(today())}, en deux exemplaires.</p>
   <table style="margin-top:24px;border:0"><tr><td style="border:0;width:50%">Signature du déposant<br><br><br></td><td style="border:0">Pour ${esc(cfg().shop)}<br><br><br></td></tr></table>`)}
 
+/* ================= WHATSAPP ================= */
+const WA_DEF={waReady:'Bonjour [nom], votre [vélo] est [prêt]. Vous pouvez venir [le] récupérer à [atelier]. Montant à régler : [montant] DT. Merci !',
+  waDevis:'Bonjour [nom],\nVoici le devis de [atelier] pour votre [vélo] :\n\n[détail]\n\nTotal TTC : [montant] DT\nMerci !'};
+const waTpl=k=>{const v=(S.settings.main||{})[k];return v&&String(v).trim()?v:WA_DEF[k]};
+/* numéro tunisien → format international sans « + » pour wa.me */
+function waNum(p){let d=String(p||'').replace(/[^\d+]/g,'');if(d.startsWith('+'))d=d.slice(1);else if(d.startsWith('00'))d=d.slice(2);d=d.replace(/\D/g,'');
+  if(d.length===8)d='216'+d;else if(d.length===9&&d.startsWith('0'))d='216'+d.slice(1);return d.length>=10?d:''}
+const waIsTrott=d=>/trott/i.test([d.bikeType,d.bikeBrand,d.request].join(' '));
+function waFill(t,d,montant,detail){const tr=waIsTrott(d);const c=cfg();
+  return String(t).replace(/\[nom\]/gi,(d.clientName||'').trim()||'cher client').replace(/\[montant\]/gi,fmt(montant)).replace(/\[atelier\]/gi,c.shop||'').replace(/\[v[ée]lo\]/gi,tr?'trottinette':'vélo')
+   .replace(/\[pr[êe]t\]/gi,tr?'prête':'prêt').replace(/\[le\]/gi,tr?'la':'le').replace(/\[d[ée]tail\]/gi,detail||'')}
+function waOpen(phone,text){const n=waNum(phone);if(!n)return toast('Numéro de téléphone du client manquant ou incorrect');
+  const url='https://wa.me/'+n+'?text='+encodeURIComponent(text);const w=window.open(url,'_blank');if(!w)location.href=url}
+function waDetail(d){const L=d.lines||[];const isOp=l=>l.type==='service'||catsOf({type:l.type||'produit',cat:l.cat||''})==='services';
+  const row=l=>`• ${l.name}${+l.qty!==1?' × '+String(l.qty).replace('.',','):''} : ${fmt(lineTotal(l))} DT`;
+  const ops=L.filter(isOp),pcs=L.filter(l=>!isOp(l));const out=[];
+  if(ops.length)out.push('Opérations :',...ops.map(row));if(pcs.length){if(out.length)out.push('');out.push('Pièces :',...pcs.map(row))}
+  if(+d.discount)out.push('','Remise : −'+fmt(d.discount)+' DT');const dep=depositSum(d.id);if(dep)out.push('Acompte déjà versé : '+fmt(dep)+' DT · reste '+fmt(devisNet(d)-dep)+' DT');
+  return out.join('\n')||'(aucune ligne)'}
+function waReady(){readFiche();const st=$('#fStatus');if(st&&st.value!=='pret')return toast('Passez d\'abord la fiche au statut « Prêt à sortir »');
+  if(!fd.phone)return toast('Indiquez le n° mobile du client dans la fiche');saveFiche(true);
+  const reste=r3(devisNet(fd)-(fd.paid?devisNet(fd):depositSum(fd.id)));waOpen(fd.phone,waFill(waTpl('waReady'),fd,reste))}
+function waDevis(){readFiche();if(!fd.phone)return toast('Indiquez le n° mobile du client dans la fiche');if(!(fd.lines||[]).length)return toast('Le devis est vide');saveFiche(true);
+  waOpen(fd.phone,waFill(waTpl('waDevis'),fd,devisNet(fd),waDetail(fd)))}
+function waBtnSync(){const b=$('#waReadyBtn'),s=$('#fStatus');if(b&&s)b.hidden=s.value!=='pret'}
+function waSaveSettings(){const s={...(S.settings.main||{}),waReady:$('#sWaReady').value.trim()||WA_DEF.waReady,waDevis:$('#sWaDevis').value.trim()||WA_DEF.waDevis};put('settings','main',s);toast('Messages WhatsApp enregistrés')}
+function waSettingsPanel(){const ex={clientName:'Ahmed',bikeType:'VTT',lines:[],discount:0};
+  return`<div class="panel pad" style="display:flex;flex-direction:column;gap:12px"><h2>Messages WhatsApp</h2>
+  <p class="small muted" style="margin:0">Champs remplis automatiquement : <b class="mono">[nom]</b> nom du client · <b class="mono">[montant]</b> montant en DT · <b class="mono">[atelier]</b> nom de l'atelier. En plus : <b class="mono">[vélo]</b> devient « vélo » ou « trottinette », <b class="mono">[prêt]</b> « prêt » ou « prête », <b class="mono">[le]</b> « le » ou « la », et <b class="mono">[détail]</b> (devis seulement) la liste des opérations et pièces.</p>
+  <label class="fl">Message « Prévenir le client » (réparation prête)<textarea class="f" id="sWaReady" rows="3">${esc(waTpl('waReady'))}</textarea></label>
+  <label class="fl">Message « Envoyer le devis »<textarea class="f" id="sWaDevis" rows="6">${esc(waTpl('waDevis'))}</textarea></label>
+  <div class="small muted" id="sWaPrev" style="white-space:pre-line;background:var(--panel2);padding:10px;border-radius:8px">Aperçu : ${esc(waFill(waTpl('waReady'),ex,85))}</div>
+  <div class="row"><button class="btn" data-act="waReset">Remettre les textes d'origine</button><span class="spacer"></span><button class="btn primary" data-act="waSaveSet">Enregistrer les messages</button></div></div>`}
+
 /* ================= VUE RÉGLAGES ================= */
 V.reglages={build(el){const c=cfg();el.innerHTML=`<div class="view" style="max-width:900px"><h1>Réglages</h1>
   <div class="panel pad" style="display:flex;flex-direction:column;gap:12px"><h2>Boutique</h2><div class="fgrid"><label class="fl">Nom de la boutique<input class="f" id="sShop" value="${esc(c.shop)}"></label><label class="fl">Activité (sous le nom)<input class="f" id="sTag" value="${esc(c.tagline)}"></label></div><div class="fgrid"><label class="fl">Adresse<input class="f" id="sAddr" value="${esc(c.address)}"></label><label class="fl">Téléphone<input class="f" id="sPhone" value="${esc(c.phone)}"></label></div><label class="fl">Message en bas du ticket<input class="f" id="sFoot" value="${esc(c.footer)}"></label>
@@ -1344,6 +1378,7 @@ V.reglages={build(el){const c=cfg();el.innerHTML=`<div class="view" style="max-w
    <div class="fgrid"><label class="fl">Matricule fiscal<input class="f mono" id="sMf" value="${esc(c.mf)}" placeholder="0000000/X/A/M/000"></label><label class="fl">Registre de commerce<input class="f mono" id="sRc" value="${esc(c.rc)}"></label><label class="fl">Taux de TVA (%)<input class="f mono" id="sTva" inputmode="decimal" value="${c.tva}"></label><label class="fl">Timbre fiscal (DT)<input class="f mono" id="sTimbre" inputmode="decimal" value="${String(c.timbre).replace('.',',')}"></label></div>
    <label class="fl">Mentions en bas de facture (RIB, conditions…)<input class="f" id="sInvM" value="${esc(c.invMention)}"></label><div class="row"><button class="btn primary" data-act="saveSettings">Enregistrer les réglages</button></div></div>
   <div class="panel pad" style="display:flex;flex-direction:column;gap:12px"><h2>Fidélité & stock</h2><div class="fgrid"><label class="fl">Points par DT payé<input class="f mono" id="sPts" inputmode="decimal" value="${c.ptsPerDT}"></label><label class="fl">Points pour une récompense<input class="f mono" id="sThr" inputmode="decimal" value="${c.threshold}"></label><label class="fl">Remise de la récompense (%)<input class="f mono" id="sPct" inputmode="decimal" value="${c.rewardPct}"></label><label class="fl">Alerte stock bas (≤)<input class="f mono" id="sLow" inputmode="decimal" value="${c.lowStock}"></label></div><div class="row"><button class="btn primary" data-act="saveSettings">Enregistrer les réglages</button></div></div>
+  ${waSettingsPanel()}
   <div class="panel pad" style="display:flex;flex-direction:column;gap:12px"><h2>Zones de l'atelier</h2><div class="tbl-wrap"><table><thead><tr><th>Code</th><th>Zone</th><th>Catégories rangées ici</th></tr></thead><tbody>${Object.entries(ZONE_NAMES).map(([z,n])=>`<tr><td class="mono">${z}</td><td>${esc(n)}</td><td class="small">${Object.entries(ZONES).filter(([,v])=>v===z).map(([k])=>catLabel(k)).join(', ')||(z.startsWith('Z-STOCK')?'Vélos (statut des fiches atelier)':'—')}</td></tr>`).join('')}</tbody></table></div></div>
   <div class="panel pad" style="display:flex;flex-direction:column;gap:12px"><h2>Synchronisation</h2><div id="syncInfo">${syncInfoHTML()}</div><div class="row"><button class="btn primary" data-act="syncNow">Synchroniser maintenant</button><button class="btn" data-act="loginOpen">${session?'Changer de compte / nom d\'appareil':'Se connecter'}</button>${session?'<button class="btn danger" data-act="logout">Se déconnecter</button>':''}</div></div>
   <div class="panel pad" style="display:flex;flex-direction:column;gap:12px"><h2>Sauvegarde</h2><p class="small muted" style="margin:0" id="saveInfo"></p><div class="row"><button class="btn" data-act="backup">Télécharger une sauvegarde (JSON)</button><button class="btn" data-act="csvSales">Exporter les ventes (CSV)</button><label class="btn">Restaurer une sauvegarde<input type="file" id="restoreIn" accept=".json,application/json" hidden></label></div></div></div>`;
@@ -1398,6 +1433,7 @@ const A={
  pad:e=>{const t=$('#'+e.dataset.t);if(!t)return;const k=e.dataset.k;if(k==='⌫')t.value=t.value.slice(0,-1);else if(k===','){if(!t.value.includes(','))t.value+=','}else t.value+=k;t.dispatchEvent(new Event('input'));t.focus()},
  npOk:()=>{const raw=$('#npIn').value;const v=pnum(raw);const cb=modalCtx&&modalCtx.onOk;closeModal();cb&&cb(v)},
  showTicket:e=>showReceipt(e.dataset.id),
+ waReady:()=>waReady(),waDevis:()=>waDevis(),waSaveSet:()=>waSaveSettings(),waReset:()=>{$('#sWaReady').value=WA_DEF.waReady;$('#sWaDevis').value=WA_DEF.waDevis;toast('Textes d\'origine remis : touchez « Enregistrer les messages » pour valider')},
  cgF:e=>{cgF=e.dataset.f;V.depot.refresh()},cgNew:()=>consModal(),cgEdit:e=>consModal(e.dataset.id),cgSave:()=>cgSave(),cgSell:()=>cgSell(),cgPay:()=>{if(cgSave(true))cgPayModal()},cgPayOk:()=>cgPayOk(),cgUnpay:()=>cgUnpay(),cgReturn:()=>cgReturn(),cgDel:()=>cgDelete(),
  cgPrint:()=>{cgRead();odOutCg('contrat-depot-'+cg.num+'.html',cgDoc(cg))},cgPrintPay:()=>{const c=S.consign[cg.id];if(c)odOutCg('recu-depot-'+c.num+'.html',cgPayDoc(c))},
  cgNext:()=>cgNext(),cgPrintGroup:()=>{cgRead();const l=cgSiblings(cg);if(l.length)odOutCg('contrat-depot-'+(cg.ownerName||'deposant').replace(/\W+/g,'-')+'.html',cgGroupDoc(l))},
