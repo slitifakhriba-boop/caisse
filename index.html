@@ -1560,9 +1560,9 @@ const root=()=>document.getElementById('trm');
 let view={page:'jobs',jobId:null,step:'reception',filter:'actifs'};
 function go(v){view={...view,...v};render();const m=document.getElementById('main');if(m)m.scrollTop=0;window.scrollTo({top:0})}
 function render(){const app=root();if(!app)return;
-  const nav=`<div class="tsub" style="margin-bottom:14px">${[['jobs','Dossiers'],['tarifs','Tarifs'],['reglages','Réglages']].map(([k,l])=>`<button data-nav="${k}" aria-current="${view.page===k||(view.page==='job'&&k==='jobs')?'page':'false'}">${l}</button>`).join('')}</div>`;
+  const nav=`<div class="tsub" style="margin-bottom:14px">${[['jobs','Dossiers'],['fiches','Fiches techniques'],['tarifs','Tarifs'],['reglages','Réglages']].map(([k,l])=>`<button data-nav="${k}" aria-current="${view.page===k||(view.page==='job'&&k==='jobs')?'page':'false'}">${l}</button>`).join('')}</div>`;
   const warn=!S.settings.tauxHoraire&&view.page!=='tarifs'?`<div class="banner" style="margin-bottom:14px">Taux horaire non renseigné : la main-d’œuvre sera à 0 DT. <button class="btn sm" data-go="tarifs">Renseigner les tarifs</button></div>`:'';
-  app.innerHTML=nav+(view.page==='jobs'?warn+renderJobs():view.page==='job'?renderJob():view.page==='tarifs'?renderTarifs():renderReglages());
+  app.innerHTML=nav+(view.page==='jobs'?warn+renderJobs():view.page==='job'?renderJob():view.page==='tarifs'?renderTarifs():view.page==='fiches'?renderFiches():renderReglages());
   app.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go({page:b.dataset.go})));
   app.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>go({page:b.dataset.nav,jobId:null})));
   refresh()}
@@ -1619,8 +1619,291 @@ window.trOnTicket=function(tk,voided){const j=tk.devisId&&appS.trott[tk.devisId]
   const cur=S.jobs.get(j.id);if(cur)S.jobs.delete(j.id)};
 window.trDepOk=trDepOk;
 V.trott={build(el){if(!document.getElementById('trmCss')){const st=document.createElement('style');st.id='trmCss';st.textContent=TRM_CSS;document.head.appendChild(st)}
-  el.innerHTML='<div class="view"><div id="trm"></div></div>';load(view.page==='job'?view.jobId:null);bindEvents(root());render()},
+  el.innerHTML='<div class="view"><div id="trm"></div></div>';load(view.page==='job'?view.jobId:null);bindEvents(root());kbBind(root());render()},
  refresh(){if(!root())return;if(view.page==='jobs'){load();render()}else if(view.page==='job'&&!S.jobs.get(view.jobId)&&appS.trott[view.jobId]){load();render()}else if(view.page==='job'){const r=appS.trott[view.jobId],c=S.jobs.get(view.jobId);if(r&&c&&(r.status!==c.status||r.ticketId!==c.ticketId)&&!timers[c.id+'p']){c.status=r.status;c.ticketId=r.ticketId;render()}}}};
+
+/* ---- Base de connaissances : fiches techniques, pannes courantes, protocoles ---- */
+const KB_SAFE=['Éteindre la trottinette et débrancher le chargeur.','Ouvrir le compartiment et débrancher la batterie (le fil noir se débranche en dernier et se rebranche en premier).','Attendre 1 à 2 min puis vérifier 0 V entre B+ et B− du contrôleur (condensateurs déchargés).'];
+const KB_P={
+ pneu_chambre:{t:'Remplacement pneu / chambre à air (pneus avec chambre)',min:40,tools:['Démonte-pneus plastique','Clés Allen / Torx selon modèle','Clé plate ou douille pour l’axe','Pompe avec manomètre','Talc ou eau savonneuse'],steps:[
+  'Dégonfler complètement le pneu (retirer l’obus si besoin).',
+  'Roue avant : déposer les caches latéraux et l’axe. Roue arrière (moteur) : déposer garde-boue/cache, l’étrier ou le tambour de frein, puis les écrous d’axe sans tirer sur le câble moteur.',
+  'Sortir la roue du cadre en guidant le câble moteur (ne jamais le laisser pendre ni le plier à angle vif).',
+  'Déjanter un côté avec les démonte-pneus en commençant à l’opposé de la valve, retirer la chambre.',
+  'Contrôler l’intérieur du pneu (épine, verre) et la jante (bavures).',
+  'Gonfler légèrement la chambre neuve, la placer, talquer, rentrer le talon en finissant près de la valve sans pincer la chambre.',
+  'Gonfler à la pression du constructeur, vérifier que le talon est régulier des deux côtés.',
+  'Remonter la roue, serrer l’axe, régler le frein, vérifier que le câble moteur sort librement sans frotter.',
+  'Essai : rotation libre, freinage, gonflage contrôlé après 10 min.']},
+ pneu_tubeless:{t:'Crevaison / remplacement pneu tubeless (10")',min:45,tools:['Mèches de réparation tubeless + alène','Démonte-pneus','Valve tubeless de rechange','Pompe avec manomètre','Eau savonneuse'],steps:[
+  'Localiser la fuite à l’eau savonneuse (bande de roulement, valve, talon).',
+  'Petite perforation sur la bande : réparation par mèche sans démonter (alène, mèche, couper l’excédent).',
+  'Fuite à la valve : remplacer la valve tubeless (pneu déjanté d’un côté), joint bien en appui sur la jante.',
+  'Pneu usé ou flanc coupé : déposer la roue (voir protocole chambre à air pour la dépose), déjanter, nettoyer les talons et la jante.',
+  'Monter le pneu neuf avec eau savonneuse, gonfler fort pour faire claquer les talons, puis ramener à la pression constructeur.',
+  'Contrôler l’étanchéité 10 min plus tard, remonter, régler le frein, essai.']},
+ cable_moteur:{t:'Réparation du câble moteur (phases + Hall) pincé ou coupé',min:75,tools:['Multimètre','Fer à souder + gaine thermo','Pince à dénuder','Gaine de protection spiralée','Clés pour l’axe moteur'],steps:[
+  ...KB_SAFE,
+  'Déposer la roue moteur ou dégager l’axe pour voir la sortie du câble.',
+  'Inspecter le câble à la sortie de l’axe : gaine écrasée, fils dénudés, traces de brûlé.',
+  'Tester les 3 phases entre elles (résistance faible et égale) et l’isolement phase/masse.',
+  'Tester les 5 fils Hall (5 V, masse, 3 signaux) en tournant la roue à la main, contrôleur alimenté : chaque signal alterne 0/5 V.',
+  'Couper la partie abîmée, ressouder fil à fil en décalant les soudures, isoler chaque fil puis l’ensemble en gaine thermo.',
+  'Si le câble est trop court ou brûlé dans l’axe : remplacer le câble moteur ou la roue moteur complète.',
+  'Remonter avec le méplat de l’axe bien orienté et une protection à la sortie du câble pour éviter un nouveau pincement.',
+  'Rebrancher, vérifier l’absence de code d’erreur, faire l’auto-apprentissage moteur si le contrôleur le demande, essai à basse vitesse.']},
+ controleur:{t:'Remplacement du contrôleur',min:75,tools:['Tournevis / Torx / Allen selon modèle','Multimètre','Pâte thermique','Colliers','Joint silicone / mastic d’étanchéité'],steps:[
+  ...KB_SAFE,
+  'Photographier tous les branchements avant de débrancher.',
+  'Débrancher : batterie, phases moteur, Hall moteur, câble tableau de bord, port de charge, éclairage.',
+  'Dévisser et sortir le contrôleur, inspecter : eau, oxydation, composants brûlés, condensateurs gonflés.',
+  'Nettoyer le logement, refaire l’étanchéité si de l’eau est entrée.',
+  'Poser le contrôleur neuf (même référence / génération) avec pâte thermique sur la semelle.',
+  'Rebrancher dans l’ordre des photos, ranger les câbles sans pincement, colliers.',
+  'Mettre sous tension : vérifier l’absence de code, la reconnaissance batterie et tableau de bord.',
+  'Si le constructeur l’exige : appairage / numéro de série via l’outil de diagnostic du fabricant.',
+  'Essai roue levée puis essai routier court.']},
+ gachette:{t:'Remplacement de la gâchette (accélérateur)',min:30,tools:['Tournevis / Allen','Multimètre','Colliers'],steps:[
+  'Éteindre la trottinette.',
+  'Mesurer le signal gâchette : environ 0,8–1 V au repos et 3,5–4,3 V à fond (5 V d’alimentation).',
+  'Démonter le tableau de bord ou le guidon selon le modèle pour accéder au connecteur de gâchette.',
+  'Débrancher l’ancienne gâchette, desserrer sa vis de bridage, la retirer du guidon.',
+  'Poser la neuve, la positionner, rebrancher, ranger le câble sans tension au pliage.',
+  'Allumer sans toucher la gâchette : le code d’erreur doit disparaître. Tester la montée progressive.']},
+ frein_capteur:{t:'Levier / capteur de frein (code frein)',min:25,tools:['Allen','Multimètre','Colliers'],steps:[
+  'Allumer sans toucher le frein : si le code disparaît, le levier ne revenait pas en butée (ressort, réglage).',
+  'Vérifier le retour libre du levier et l’aimant / capteur Hall du levier.',
+  'Accéder au connecteur du capteur (tableau de bord ou guidon), contrôler le câble jusqu’au contrôleur.',
+  'Remplacer le levier ou le capteur défectueux, régler la garde du câble de frein.',
+  'Tester : la coupure moteur et le feu stop fonctionnent quand on freine.']},
+ tableau_bord:{t:'Tableau de bord / câble de communication (code 10)',min:40,tools:['Tournevis / Torx','Multimètre','Fer à souder'],steps:[
+  'Éteindre. Démonter le capot du tableau de bord.',
+  'Débrancher puis rebrancher le connecteur du tableau de bord (oxydation fréquente).',
+  'Suivre le câble principal dans la colonne : zone de pliage = cassures internes fréquentes.',
+  'Tester la continuité de chaque fil (alimentation, masse, TX, RX) entre tableau de bord et contrôleur.',
+  'Remplacer le câble principal si un fil est coupé, sinon remplacer le tableau de bord.',
+  'Allumer et vérifier que le code disparaît et que la gâchette / le frein répondent.']},
+ batterie:{t:'Batterie / BMS : contrôle, réveil, remplacement',min:50,tools:['Multimètre','Chargeur d’origine','Clés Torx / Allen','Pochette ignifuge'],steps:[
+  ...KB_SAFE,
+  'Mesurer la tension aux bornes de la batterie (36 V nominal : 42 V chargée, environ 30–33 V vide ; 48 V nominal : 54,6 V chargée).',
+  'Tension nulle mais pack sain : BMS en protection, brancher le chargeur d’origine plusieurs heures, contrôler la LED du chargeur.',
+  'Contrôler le câble et le connecteur de communication BMS ↔ contrôleur (codes 21 à 24).',
+  'Vérifier les groupes de cellules si accessibles : écart > 0,1 V = déséquilibre ; cellule gonflée ou chaude = remplacement du pack.',
+  'Remplacement : même tension, même connectique et BMS compatible, fixer et isoler le pack, refaire l’étanchéité.',
+  'Charge complète, puis contrôle de l’autonomie et de la tension en charge.']},
+ frein_disque:{t:'Frein à disque : réglage / plaquettes / disque',min:30,tools:['Allen 4/5 mm','Clé Torx (disque)','Dégraissant frein','Plaquettes neuves'],steps:[
+  'Contrôler l’épaisseur des plaquettes et l’état du disque (voilé, rayé, huileux).',
+  'Changer les plaquettes si < 1 mm de garniture ; dégraisser le disque.',
+  'Centrer l’étrier : desserrer ses vis, serrer le levier, resserrer.',
+  'Régler la tension du câble (molette au levier ou serre-câble à l’étrier) : levier ferme avant mi-course.',
+  'Roue tournée à la main : pas de frottement permanent. Essai de freinage progressif.']},
+ frein_tambour:{t:'Frein tambour : réglage / mâchoires',min:35,tools:['Clés Allen / plates','Câble de frein si usé'],steps:[
+  'Contrôler la garde au levier et l’usure du câble.',
+  'Régler la tension avec la molette au levier puis l’écrou du câble au tambour.',
+  'Si le freinage reste faible : déposer la roue, contrôler les mâchoires et l’intérieur du tambour (graisse, usure).',
+  'Remplacer mâchoires ou câble si nécessaire, remonter.',
+  'Vérifier que la roue tourne libre et que le frein bloque la roue levier serré.']},
+ pliage:{t:'Jeu dans la colonne / mécanisme de pliage',min:30,tools:['Allen','Clé plate','Frein filet moyen','Rondelles / cales si besoin'],steps:[
+  'Constater le jeu colonne dépliée (avant/arrière et latéral).',
+  'Contrôler le crochet / levier de verrouillage, la goupille et l’axe de pliage.',
+  'Régler la vis de réglage du mécanisme ou remplacer les pièces usées (crochet, axe, bagues).',
+  'Contrôler aussi le jeu de direction (roulements de colonne) et resserrer l’écrou de direction.',
+  'Frein filet sur la visserie, vérifier que le pliage reste possible sans forcer.']},
+ feu_arriere:{t:'Feu arrière / fil d’éclairage arraché',min:30,tools:['Fer à souder','Gaine thermo','Colliers / attache'],steps:[
+  'Éteindre. Repérer le fil du feu arrière le long du garde-boue.',
+  'Le fil frotte souvent sur le pneu ou est arraché quand le garde-boue bouge : réparer par soudure et gaine thermo.',
+  'Fixer le fil sous le garde-boue avec un passage protégé pour qu’il ne touche plus le pneu.',
+  'Si le feu ne marche toujours pas : remplacer le feu ou le garde-boue avec feu intégré.',
+  'Tester feu et feu stop.']},
+ etancheite:{t:'Humidité / oxydation : nettoyage et étanchéité',min:60,tools:['Nettoyant contacts / alcool isopropylique','Brosse','Sèche-cheveux (tiède)','Joint silicone / mastic','Graisse diélectrique'],steps:[
+  ...KB_SAFE,
+  'Ouvrir le plateau, retirer l’eau, sécher à l’air tiède.',
+  'Nettoyer les connecteurs et les cartes oxydées (alcool isopropylique), sécher complètement.',
+  'Contrôler le contrôleur et le BMS : si composants corrodés ou brûlés → remplacement (voir protocole contrôleur / batterie).',
+  'Refaire le joint du plateau, boucher les passages de câbles, graisse diélectrique sur les connecteurs.',
+  'Remonter, tester, conseiller au client d’éviter flaques et lavage au jet.']},
+ charge:{t:'Ne charge pas : chargeur / port de charge',min:30,tools:['Multimètre','Tournevis'],steps:[
+  'Mesurer la tension de sortie du chargeur à vide (≈ 42 V pour 36 V ; ≈ 54,6 V pour 48 V).',
+  'Contrôler le port de charge : broches oxydées, fils arrachés, fusible éventuel.',
+  'Contrôler la continuité port de charge → batterie / contrôleur.',
+  'Remplacer le chargeur ou le port de charge défectueux.',
+  'Vérifier que la LED du chargeur passe au rouge en charge puis au vert pleine charge.']},
+ roulements:{t:'Roulements de roue / moteur bruyants',min:60,tools:['Extracteur de roulements','Clés','Maillet','Roulements neufs (référence relevée)'],steps:[
+  ...KB_SAFE,
+  'Déposer la roue concernée.',
+  'Moteur : ouvrir le flasque, relever la référence des roulements, les extraire.',
+  'Poser les roulements neufs en appui sur la bague extérieure, sans choc sur les aimants.',
+  'Refermer, contrôler qu’il n’y a pas de point dur, remonter et essayer.']}
+};
+/* fréquence : 3 très courant, 2 courant, 1 occasionnel · fam : familles de pannes du diagnostic */
+const KB_MODELS=[
+ {id:'xm365',brand:'Xiaomi',name:'Xiaomi M365 / 1S / Essential',codeBrand:'Xiaomi',tension:'36',specs:[['Batterie','36 V · M365 ≈ 7,8 Ah (280 Wh), 1S 7,65 Ah (275 Wh)'],['Moteur','250 W nominal, 500 W crête (moteur roue avant)'],['Pneus','8,5" pneumatiques avec chambre à air'],['Freins','Disque arrière + E-ABS avant'],['Charge','42 V'],['Pression','Environ 50 psi (3,5 bar) — voir flanc du pneu']],
+  faults:[
+   {id:'cable',t:'Câble moteur pincé ou coupé à la sortie de l’axe',freq:3,codes:['11','12','13','18'],fam:['phase','hall','brule'],sym:'Codes 11/12/13/18, à-coups, moteur qui broute ou coupe, souvent après une crevaison réparée ou un choc.',p:'cable_moteur',parts:['Câble','Moteur']},
+   {id:'crev',t:'Crevaisons fréquentes (pneu 8,5" avec chambre)',freq:3,codes:[],fam:[],sym:'Pneu à plat, pneu qui se dégonfle en quelques jours.',p:'pneu_chambre',parts:['Pneu']},
+   {id:'pliage',t:'Jeu dans la colonne au niveau du pliage',freq:3,codes:[],fam:[],sym:'Colonne qui bouge / claque en roulant.',p:'pliage',parts:[]},
+   {id:'eau',t:'Contrôleur humide / oxydé (eau par le dessous du plateau)',freq:2,codes:['11','12','13','28','29'],fam:['eau','mosfet','ctrl'],sym:'Coupures après pluie, codes moteur ou MOSFET, plus rien après lavage.',p:'etancheite',parts:['Contrôleur','Consommable']},
+   {id:'ctrl',t:'Contrôleur hors service (MOSFET)',freq:2,codes:['28','29','26','27','40'],fam:['mosfet','ctrl','brule'],sym:'Roue dure contrôleur éteint, codes 28/29, odeur de brûlé.',p:'controleur',parts:['Contrôleur']},
+   {id:'comm',t:'Câble principal coupé dans la colonne (communication)',freq:2,codes:['10'],fam:['com'],sym:'Code 10, tableau de bord qui s’éteint en pliant ou en tournant le guidon.',p:'tableau_bord',parts:['Câble','Afficheur']},
+   {id:'gach',t:'Gâchette défectueuse',freq:2,codes:['14'],fam:['gachette'],sym:'Code 14, accélération par à-coups ou impossible.',p:'gachette',parts:['Gâchette']},
+   {id:'frein',t:'Capteur / levier de frein',freq:2,codes:['15'],fam:['frein'],sym:'Code 15, moteur coupé en permanence ou feu stop allumé.',p:'frein_capteur',parts:['Frein']},
+   {id:'bms',t:'Batterie / BMS (communication ou protection)',freq:2,codes:['21','22','23','24','39'],fam:['alim','batterie'],sym:'Codes 21 à 24 ou 39, ne s’allume plus, autonomie très faible.',p:'batterie',parts:['Batterie']},
+   {id:'feu',t:'Feu arrière éteint (fil arraché par le pneu)',freq:2,codes:[],fam:[],sym:'Feu arrière faible ou éteint.',p:'feu_arriere',parts:[]},
+   {id:'disque',t:'Freinage faible (frein à disque à régler)',freq:2,codes:[],fam:[],sym:'Levier qui va jusqu’au guidon, freinage faible, bruit.',p:'frein_disque',parts:['Frein']}],
+  src:[['Spécifications Mi Electric Scooter 1S (mi.com)','https://www.mi.com/uk/mi-electric-scooter-1S/specs/'],['Codes d’erreur M365 / Pro (fallman.tech)','https://fallman.tech/xiaomi-m365-error-codes/'],['Guide pannes M365 (riderguide.com)','https://riderguide.com/guides/xiaomi-mi-m365-modifications-repairs/']]},
+ {id:'xpro',brand:'Xiaomi',name:'Xiaomi Pro / Pro 2 / Mi 3',codeBrand:'Xiaomi',tension:'36',specs:[['Batterie','36 V · Pro / Pro 2 ≈ 12,8 Ah (474 Wh) · Mi 3 : 7,65 Ah (275 Wh)'],['Moteur','300 W nominal, 600 W crête'],['Pneus','8,5" pneumatiques avec chambre à air'],['Freins','Disque arrière + E-ABS avant'],['Charge','42 V'],['Poids','Pro 2 : 14,2 kg · Mi 3 : 13,2 kg']],
+  faults:[
+   {id:'cable',t:'Câble moteur pincé à la sortie de l’axe',freq:3,codes:['11','12','13','18'],fam:['phase','hall'],sym:'Codes 11/12/13/18, à-coups, souvent après un changement de pneu.',p:'cable_moteur',parts:['Câble','Moteur']},
+   {id:'crev',t:'Crevaisons (8,5" avec chambre)',freq:3,codes:[],fam:[],sym:'Pneu à plat.',p:'pneu_chambre',parts:['Pneu']},
+   {id:'pliage',t:'Jeu au pliage de la colonne',freq:3,codes:[],fam:[],sym:'Colonne qui bouge en roulant.',p:'pliage',parts:[]},
+   {id:'eau',t:'Contrôleur oxydé après pluie',freq:2,codes:['11','12','13','28','29'],fam:['eau','mosfet'],sym:'Coupures ou codes moteur après pluie / lavage.',p:'etancheite',parts:['Contrôleur','Consommable']},
+   {id:'ctrl',t:'Contrôleur hors service (MOSFET)',freq:2,codes:['28','29','40'],fam:['mosfet','ctrl','brule'],sym:'Codes 28/29, roue dure contrôleur éteint.',p:'controleur',parts:['Contrôleur']},
+   {id:'comm',t:'Câble principal / tableau de bord',freq:2,codes:['10'],fam:['com'],sym:'Code 10, coupures en tournant le guidon.',p:'tableau_bord',parts:['Câble','Afficheur']},
+   {id:'gach',t:'Gâchette',freq:2,codes:['14'],fam:['gachette'],sym:'Code 14.',p:'gachette',parts:['Gâchette']},
+   {id:'frein',t:'Capteur de frein',freq:2,codes:['15'],fam:['frein'],sym:'Code 15.',p:'frein_capteur',parts:['Frein']},
+   {id:'bms',t:'Batterie / BMS',freq:2,codes:['21','22','23','24','39'],fam:['alim','batterie'],sym:'Codes 21–24, 39, ne s’allume plus.',p:'batterie',parts:['Batterie']},
+   {id:'charge',t:'Ne charge plus (port de charge oxydé / chargeur)',freq:1,codes:[],fam:['alim'],sym:'LED chargeur reste verte, batterie ne monte pas.',p:'charge',parts:['Batterie']},
+   {id:'disque',t:'Frein à disque à régler / plaquettes',freq:2,codes:[],fam:[],sym:'Freinage faible.',p:'frein_disque',parts:['Frein']}],
+  src:[['Spécifications Mi Electric Scooter 3 (mi.com)','https://www.mi.com/global/product/mi-electric-scooter-3/specs/'],['Test Mi Scooter Pro 2 (TechAdvisor)','https://www.techadvisor.com/article/721735/xiaomi-mi-scooter-pro-2-review.html'],['Codes d’erreur M365 / Pro (fallman.tech)','https://fallman.tech/xiaomi-m365-error-codes/']]},
+ {id:'x4',brand:'Xiaomi',name:'Xiaomi Electric Scooter 4 / 4 Pro',codeBrand:'Xiaomi',tension:'36',specs:[['Batterie','36 V · 4 : 7,65 Ah (275 Wh) · 4 Pro : 12,4 Ah (446 Wh)'],['Moteur','4 : 300 W / 600 W crête · 4 Pro : 350 W / 700 W crête'],['Pneus','10" tubeless'],['Freins','Disque arrière + E-ABS avant'],['Poids','4 : 17,2 kg · 4 Pro : 17 kg']],
+  faults:[
+   {id:'tubeless',t:'Fuite pneu tubeless (valve, talon, perforation)',freq:3,codes:[],fam:[],sym:'Pneu qui se dégonfle lentement.',p:'pneu_tubeless',parts:['Pneu']},
+   {id:'cable',t:'Câble moteur / Hall',freq:2,codes:['11','12','18'],fam:['phase','hall'],sym:'Codes 11, 12 ou 18, à-coups.',p:'cable_moteur',parts:['Câble','Moteur']},
+   {id:'ctrl',t:'Contrôleur (surintensité, MOSFET)',freq:2,codes:['11','12','28','29','40'],fam:['mosfet','ctrl','brule'],sym:'Codes 28/29/40, coupures.',p:'controleur',parts:['Contrôleur']},
+   {id:'comm',t:'Communication tableau de bord ↔ contrôleur',freq:2,codes:['10'],fam:['com'],sym:'Code 10.',p:'tableau_bord',parts:['Câble','Afficheur']},
+   {id:'gach',t:'Gâchette bloquée ou HS',freq:2,codes:['14'],fam:['gachette'],sym:'Code 14 au démarrage.',p:'gachette',parts:['Gâchette']},
+   {id:'frein',t:'Levier de frein',freq:2,codes:['15'],fam:['frein'],sym:'Code 15 au démarrage.',p:'frein_capteur',parts:['Frein']},
+   {id:'bms',t:'Batterie / BMS',freq:2,codes:['21','39'],fam:['alim','batterie'],sym:'Code 21 ou 39.',p:'batterie',parts:['Batterie']},
+   {id:'pliage',t:'Jeu au pliage',freq:1,codes:[],fam:[],sym:'Colonne qui bouge.',p:'pliage',parts:[]},
+   {id:'disque',t:'Frein à disque',freq:2,codes:[],fam:[],sym:'Freinage faible ou bruyant.',p:'frein_disque',parts:['Frein']}],
+  src:[['Spécifications Electric Scooter 4 (mi.com)','https://www.mi.com/global/product/xiaomi-electric-scooter-4/specs/'],['Spécifications Electric Scooter 4 Pro (mi.com)','https://www.mi.com/global/product/xiaomi-electric-scooter-4-pro/specs'],['Codes d’erreur Xiaomi : support officiel (exemple Scooter 6 Pro)','https://www.mi.com/global/support/article/KA-696936/']]},
+ {id:'g30',brand:'Segway / Ninebot',name:'Ninebot Max G30 / G30LP / G2',codeBrand:'Segway / Ninebot',tension:'36',specs:[['Batterie','G30 : 36 V · 551 Wh (≈ 15,3 Ah), charge 42 V'],['Moteur','350 W nominal, ≈ 700 W crête (moteur roue arrière)'],['Pneus','10" tubeless (gel anti-crevaison)'],['Freins','Tambour avant + frein électrique arrière'],['Pression','32–37 psi (manuel G30P)'],['Étanchéité','IPX5'],['Chargeur','Intégré (42 V, 2,9 A)']],
+  faults:[
+   {id:'valve',t:'Fuite à la valve / pneu tubeless',freq:3,codes:[],fam:[],sym:'Pneu qui se dégonfle, gel qui sort à la valve.',p:'pneu_tubeless',parts:['Pneu']},
+   {id:'connect',t:'Connecteurs moteur fondus / moteur qui vibre',freq:2,codes:['18','11','12','13'],fam:['hall','phase','coupure'],sym:'Code 18, bruit et vibration du moteur, odeur de chaud.',p:'cable_moteur',parts:['Connecteur','Câble']},
+   {id:'comm',t:'Câble tableau de bord (communication)',freq:2,codes:['10'],fam:['com'],sym:'Code 10.',p:'tableau_bord',parts:['Câble','Afficheur']},
+   {id:'gach',t:'Gâchette',freq:2,codes:['14'],fam:['gachette'],sym:'Code 14 : allumer sans toucher la gâchette, contrôler le connecteur sous le tableau de bord.',p:'gachette',parts:['Gâchette']},
+   {id:'frein',t:'Capteur de frein',freq:2,codes:['15','16'],fam:['frein'],sym:'Code 15 (ou 16).',p:'frein_capteur',parts:['Frein']},
+   {id:'bms',t:'Communication batterie (câble 4 broches BMS)',freq:2,codes:['21','19','24'],fam:['alim','batterie'],sym:'Code 21 : rebrancher le câble de données BMS, charger plusieurs heures.',p:'batterie',parts:['Batterie']},
+   {id:'ctrl',t:'Contrôleur (MOSFET / température)',freq:1,codes:['28','29','40'],fam:['mosfet','ctrl','chauffe'],sym:'Codes 28, 29, 40.',p:'controleur',parts:['Contrôleur']},
+   {id:'tambour',t:'Frein tambour avant à régler',freq:2,codes:[],fam:[],sym:'Freinage faible, levier mou.',p:'frein_tambour',parts:['Frein']},
+   {id:'pliage',t:'Jeu au pliage / crochet',freq:2,codes:[],fam:[],sym:'Colonne qui bouge.',p:'pliage',parts:[]},
+   {id:'eau',t:'Humidité dans le plateau',freq:1,codes:[],fam:['eau'],sym:'Coupures après pluie.',p:'etancheite',parts:['Consommable']}],
+  src:[['Manuel G30P (PDF)','https://joeybabcock.me/wiki/images/c/c7/NinebotG30PManual.pdf'],['Manuel G30E (PDF)','https://joeybabcock.me/wiki/images/a/aa/NinebotG30EManual.pdf'],['Manuel G30LP (PDF, Segway)','https://support.segway.com/product_files/20230616024534_Ninebot KickScooter G30LP User Manual.pdf'],['Fiche technique Max G30 (PDF, Segway)','https://wordpress.segway.com/wp-content/uploads/2021/01/maxg30-infosheet.pdf'],['Codes d’erreur Ninebot Max','https://joeybabcock.me/wiki/List_of_Ninebot_Max_Error_Codes'],['Guides de réparation Ninebot Max','https://joeybabcock.me/wiki/Ninebot_Max_Repair_Guides'],['iFixit : remplacement batterie G30','https://www.ifixit.com/Guide/Segway+Ninebot+Max+Battery+Replacement/142867'],['iFixit : roue avant G30','https://www.ifixit.com/Guide/Segway+Ninebot+Max+Front+Tire+Repacement/142871']]},
+ {id:'f40',brand:'Segway / Ninebot',name:'Ninebot F20 / F30 / F40',codeBrand:'Segway / Ninebot',tension:'36',specs:[['Batterie','F40 : 36 V · 10,2 Ah (367 Wh), charge 42 V'],['Moteur','F40 : 350 W'],['Pneus','10" pneumatiques'],['Note','Freins : voir le manuel de la série F (variable selon version)']],
+  faults:[
+   {id:'crev',t:'Crevaison 10"',freq:3,codes:[],fam:[],sym:'Pneu à plat.',p:'pneu_chambre',parts:['Pneu']},
+   {id:'comm',t:'Communication tableau de bord',freq:2,codes:['10'],fam:['com'],sym:'Code 10.',p:'tableau_bord',parts:['Câble','Afficheur']},
+   {id:'gach',t:'Gâchette',freq:2,codes:['14'],fam:['gachette'],sym:'Code 14.',p:'gachette',parts:['Gâchette']},
+   {id:'frein',t:'Capteur de frein',freq:2,codes:['15'],fam:['frein'],sym:'Code 15.',p:'frein_capteur',parts:['Frein']},
+   {id:'hall',t:'Capteurs Hall / câble moteur',freq:2,codes:['18','11','12','13'],fam:['hall','phase'],sym:'Code 18, à-coups.',p:'cable_moteur',parts:['Câble','Moteur']},
+   {id:'bms',t:'Batterie / BMS',freq:2,codes:['21','24','39'],fam:['alim','batterie'],sym:'Codes 21, 24, 39.',p:'batterie',parts:['Batterie']},
+   {id:'ctrl',t:'Contrôleur',freq:1,codes:['28','29','40'],fam:['mosfet','ctrl'],sym:'Codes 28, 29, 40.',p:'controleur',parts:['Contrôleur']},
+   {id:'pliage',t:'Jeu au pliage',freq:2,codes:[],fam:[],sym:'Colonne qui bouge.',p:'pliage',parts:[]}],
+  src:[['Fiche Ninebot F40 (specs)','https://joeybabcock.me/wiki/Ninebot_F40'],['Manuel série F (PDF)','https://joeybabcock.me/wiki/images/b/b3/NinebotFSeriesProductManual.pdf'],['Codes d’erreur Segway (LOCO)','https://locoscooters.ie/blogs/electric-scooter-ireland-blog/the-ultimate-electric-scooter-error-list']]},
+ {id:'es2',brand:'Segway / Ninebot',name:'Ninebot ES1 / ES2 / ES4',codeBrand:'Segway / Ninebot',tension:'36',specs:[['Batterie','ES2 : 36 V · 5,2 Ah (187 Wh), charge 42 V · ES4 : batterie externe en plus'],['Moteur','ES2 : 300 W'],['Pneus','Pleins (sans chambre)'],['Note','Suspensions avant et arrière']],
+  faults:[
+   {id:'pliage',t:'Jeu au pliage / colonne',freq:3,codes:[],fam:[],sym:'Colonne qui bouge en roulant.',p:'pliage',parts:[]},
+   {id:'comm',t:'Communication tableau de bord',freq:2,codes:['10'],fam:['com'],sym:'Code 10.',p:'tableau_bord',parts:['Câble','Afficheur']},
+   {id:'gach',t:'Gâchette',freq:2,codes:['14'],fam:['gachette'],sym:'Code 14.',p:'gachette',parts:['Gâchette']},
+   {id:'frein',t:'Capteur de frein',freq:2,codes:['15'],fam:['frein'],sym:'Code 15.',p:'frein_capteur',parts:['Frein']},
+   {id:'hall',t:'Capteurs Hall / câble moteur',freq:2,codes:['18'],fam:['hall','phase'],sym:'Code 18.',p:'cable_moteur',parts:['Câble','Moteur']},
+   {id:'bms',t:'Batterie interne / externe (ES4)',freq:2,codes:['21','20','42','45','46'],fam:['alim','batterie'],sym:'Codes 21, 20, 42, 45, 46.',p:'batterie',parts:['Batterie']},
+   {id:'ctrl',t:'Contrôleur',freq:1,codes:['28','29','40'],fam:['mosfet','ctrl'],sym:'Codes 28, 29, 40.',p:'controleur',parts:['Contrôleur']}],
+  src:[['Fiche Ninebot ES2 (specs)','https://joeybabcock.me/wiki/Ninebot_ES2'],['Codes d’erreur Segway (LOCO)','https://locoscooters.ie/blogs/electric-scooter-ireland-blog/the-ultimate-electric-scooter-error-list']]},
+ {id:'kugoo',brand:'Kugoo',name:'Kugoo M4 / M4 Pro / S1',codeBrand:'Kugoo',tension:'48',specs:[['Batterie','M4 / M4 Pro : 48 V (capacité selon version) · S1 : 36 V'],['Moteur','M4 : 500 W (roue arrière) · S1 : 350 W'],['Pneus','M4 : 10" pneumatiques · S1 : 8" pleins'],['Note','Kugoo change souvent de contrôleur : vérifier la référence avant commande']],
+  faults:[
+   {id:'crev',t:'Crevaison (M4, 10" avec chambre)',freq:3,codes:[],fam:[],sym:'Pneu à plat.',p:'pneu_chambre',parts:['Pneu']},
+   {id:'moteur',t:'Défaut moteur / câble moteur',freq:2,codes:['1'],fam:['moteur','hall','phase'],sym:'Code 1.',p:'cable_moteur',parts:['Moteur','Câble']},
+   {id:'gach',t:'Gâchette',freq:2,codes:['2'],fam:['gachette'],sym:'Code 2.',p:'gachette',parts:['Gâchette']},
+   {id:'ctrl',t:'Contrôleur',freq:2,codes:['3'],fam:['ctrl','mosfet'],sym:'Code 3.',p:'controleur',parts:['Contrôleur']},
+   {id:'frein',t:'Levier de frein',freq:2,codes:['4'],fam:['frein'],sym:'Code 4.',p:'frein_capteur',parts:['Frein']},
+   {id:'bat',t:'Sous-tension batterie',freq:2,codes:['5'],fam:['alim','batterie'],sym:'Code 5.',p:'batterie',parts:['Batterie']},
+   {id:'comm',t:'Communication afficheur ↔ contrôleur',freq:2,codes:['6','7'],fam:['com'],sym:'Code 6 ou 7.',p:'tableau_bord',parts:['Câble','Afficheur']},
+   {id:'disque',t:'Freins à disque',freq:2,codes:[],fam:[],sym:'Freinage faible.',p:'frein_disque',parts:['Frein']}],
+  src:[['Codes d’erreur Kugoo (LOCO)','https://locoscooters.ie/blogs/electric-scooter-ireland-blog/the-ultimate-electric-scooter-error-list'],['Liste de codes d’erreur toutes marques (iScooter)','https://www.iscooterglobal.co.uk/blogs/news/electric-scooter-error-codes-list']]},
+ {id:'puissante',brand:'Autre',name:'Trottinette puissante 48–60 V (Kaabo, Dualtron, Zero, Vsett, KuKirin…)',codeBrand:'',tension:'60',specs:[['Batterie','48 à 72 V selon modèle — lire l’étiquette du pack'],['Moteur','Souvent 2 moteurs (avant + arrière), 2 contrôleurs'],['Pneus','10–11" pneumatiques ou tubeless'],['Note','Codes d’erreur selon la marque : voir l’arbre de diagnostic (Kaabo, Dualtron, Zero / Vsett, KuKirin)']],
+  faults:[
+   {id:'ctrl',t:'Contrôleur grillé (un des deux)',freq:2,codes:[],fam:['ctrl','mosfet','brule'],sym:'Un moteur ne tire plus, odeur de brûlé, code contrôleur.',p:'controleur',parts:['Contrôleur']},
+   {id:'cable',t:'Câble moteur / Hall',freq:2,codes:[],fam:['hall','phase','moteur'],sym:'À-coups, bruit, code moteur.',p:'cable_moteur',parts:['Câble','Moteur']},
+   {id:'crev',t:'Crevaison',freq:3,codes:[],fam:[],sym:'Pneu à plat.',p:'pneu_chambre',parts:['Pneu']},
+   {id:'disque',t:'Freins à disque / hydrauliques',freq:2,codes:[],fam:[],sym:'Freinage faible.',p:'frein_disque',parts:['Frein']},
+   {id:'bat',t:'Batterie / BMS',freq:2,codes:[],fam:['alim','batterie'],sym:'Coupures en accélération, autonomie faible.',p:'batterie',parts:['Batterie']},
+   {id:'comm',t:'Afficheur / communication',freq:2,codes:[],fam:['com'],sym:'Code communication, afficheur noir.',p:'tableau_bord',parts:['Afficheur','Câble']},
+   {id:'rlt',t:'Roulements bruyants',freq:1,codes:[],fam:['moteur'],sym:'Grondement en roulant.',p:'roulements',parts:['Roulement']}],
+  src:[['Codes Zero / Vsett / Kugoo (LOCO)','https://locoscooters.ie/blogs/electric-scooter-ireland-blog/the-ultimate-electric-scooter-error-list'],['Liste de codes d’erreur toutes marques (iScooter)','https://www.iscooterglobal.co.uk/blogs/news/electric-scooter-error-codes-list']]}
+];
+
+/* ---- Fiches techniques : outils ---- */
+const FREQ_L={3:'Très courant',2:'Courant',1:'Occasionnel'};
+const kbSet=()=>{S.settings.kb=S.settings.kb||{};const k=S.settings.kb;k.notes=k.notes||{};k.extra=k.extra||{};k.models=k.models||[];return k};
+const kbModels=()=>[...KB_MODELS,...kbSet().models];
+const kbModel=id=>kbModels().find(m=>m.id===id)||null;
+const kbFaults=m=>m?[...(m.faults||[]),...(kbSet().extra[m.id]||[])]:[];
+const kbFault=(m,fid)=>kbFaults(m).find(f=>f.id===fid)||null;
+function kbProto(f){if(f.p&&KB_P[f.p])return KB_P[f.p];return{t:f.t,min:+f.min||30,tools:f.tools||[],steps:f.steps||[]}}
+const kbCode=c=>String(c||'').trim().toUpperCase().replace(/^E-?/,'').replace(/^0+(?=\d)/,'');
+function kbRank(job){const m=kbModel(job.rec.modelId);if(!m)return[];const d=job.diag;const sug=suggested(job);const code=d.q2==='oui'&&d.code?kbCode(d.code):'';
+  return kbFaults(m).map(f=>{let s=+f.freq||1,why=[];if(code&&(f.codes||[]).some(c=>kbCode(c)===code)){s+=10;why.push('code '+d.code)}
+    const fm=(f.fam||[]).filter(x=>sug.has(x));if(fm.length){s+=5;why.push('vos réponses / mesures')}return{f,s,why}}).sort((a,b)=>b.s-a.s)}
+function kbModelOptions(sel){return`<option value="">— Choisir le modèle —</option>${[...new Set(kbModels().map(m=>m.brand))].map(b=>`<optgroup label="${esc(b)}">${kbModels().filter(m=>m.brand===b).map(m=>`<option value="${esc(m.id)}" ${sel===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</optgroup>`).join('')}`}
+function kbSelectModel(job,id){const m=kbModel(id);job.rec.modelId=id;if(m){if(!job.rec.marque)job.rec.marque=m.brand==='Autre'?'':m.brand.split(' / ')[0];if(!job.rec.modele)job.rec.modele=m.name.replace(/^(Xiaomi|Ninebot|Kugoo)\s+/,'');if(m.tension)job.rec.tension=m.tension;if(!job.diag.brand&&m.codeBrand)job.diag.brand=m.codeBrand}saveJobSoon(job);render()}
+function kbProtoHTML(f,opt={}){const P=kbProto(f);
+  return`<div class="stack" style="gap:8px"><div class="small"><b>${esc(P.t)}</b> · temps indicatif ${hm(P.min)}${(f.parts||[]).length?` · pièces : ${esc(f.parts.join(', '))}`:''}</div>
+   ${P.tools.length?`<div class="small"><span class="muted">Outils :</span> ${P.tools.map(esc).join(' · ')}</div>`:''}
+   <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px">${P.steps.map((s,i)=>`<li>${opt.check?`<label class="row" style="gap:8px;align-items:flex-start"><input type="checkbox" data-f="rep.proto.${f.id}.${i}" ${getP(opt.job,'rep.proto.'+f.id+'.'+i)?'checked':''}> <span>${esc(s)}</span></label>`:esc(s)}</li>`).join('')}</ol></div>`}
+function kbDiagRender(job){const el=$('#kbDiag');if(!el)return;const m=kbModel(job.rec.modelId);
+  if(!m){el.innerHTML=`<div class="row spread"><h3>Pannes connues du modèle</h3></div><div class="row"><label class="f" style="flex:1 1 280px">Modèle de la trottinette<select id="kbModelSel">${kbModelOptions('')}</select></label></div><p class="small muted" style="margin:0">Choisissez le modèle : l’application classera ses pannes courantes selon le code d’erreur, vos réponses et vos mesures.</p>`;return}
+  const R=kbRank(job);const added=new Set(job.kb||[]);
+  el.innerHTML=`<div class="row spread"><h3>Pannes connues · ${esc(m.name)}</h3><button class="btn sm" data-kbopen="${esc(m.id)}">Fiche technique</button></div>
+  <div class="stack" style="gap:6px">${R.map(({f,s,why},i)=>`${i===4&&R.length>4?`<details><summary class="small" style="cursor:pointer;margin:4px 0">Voir les ${R.length-4} autres pannes de ce modèle</summary><div class="stack" style="gap:6px;margin-top:6px">`:''}<div class="fault ${s>=5?'sug':''}" style="flex-direction:column;gap:6px"><div class="row spread" style="width:100%"><span><b>${esc(f.t)}</b> ${s>=5?'<span class="flag warn">Probable</span>':''} <span class="flag na">${FREQ_L[f.freq]||''}</span>${(f.codes||[]).length?` <span class="small muted">codes ${esc(f.codes.join(', '))}</span>`:''}</span>
+   <span class="row" style="gap:6px"><button class="btn sm" data-kbview="${esc(f.id)}">Protocole</button>${added.has(f.id)?'<span class="flag ok">Ajoutée au dossier</span>':`<button class="btn sm primary" data-kbadd="${esc(f.id)}">Ajouter au dossier</button>`}</span></div>
+   <span class="small muted">${esc(f.sym||'')}${why.length?' · <b>correspond à : '+esc(why.join(', '))+'</b>':''}</span></div>${i===R.length-1&&R.length>4?'</div></details>':''}`).join('')}</div>`}
+function kbAdd(job,fid){const m=kbModel(job.rec.modelId);const f=kbFault(m,fid);if(!f)return;job.kb=[...new Set([...(job.kb||[]),fid])];const P=kbProto(f);
+  if(!job.devis.lines.some(l=>l.kbFault===fid))job.devis.lines.push({id:uid(),kind:'mo',opId:'kb:'+fid,kbFault:fid,kbParts:f.parts||[],label:P.t,minutes:P.min,rate:S.settings.tauxHoraire||0});
+  saveJobSoon(job);toast('Panne ajoutée : opération au devis + protocole dans l’étape Réparation');render()}
+function kbView(job,fid){const m=kbModel(job?job.rec.modelId:view.kbModel);const f=kbFault(m,fid);if(!f)return;
+  openModal(head(esc(f.t),esc(m.name))+`<div class="sh-b">${f.sym?`<p class="small muted" style="margin:0">${esc(f.sym)}</p>`:''}${kbProtoHTML(f)}</div><div class="sh-f"><span class="spacer"></span><button class="btn primary" data-act="close">Fermer</button></div>`,true)}
+function kbRepHTML(job){const m=kbModel(job.rec.modelId);const fs=(job.kb||[]).map(id=>kbFault(m,id)).filter(Boolean);if(!fs.length)return'';
+  return`<section class="panel section"><h3>Protocoles de réparation</h3>${fs.map(f=>{const n=kbProto(f).steps.length;const done=kbProto(f).steps.filter((s,i)=>getP(job,'rep.proto.'+f.id+'.'+i)).length;
+   return`<details ${done<n?'open':''} style="border:1px solid var(--line);border-radius:6px;padding:10px 12px"><summary style="cursor:pointer"><b>${esc(f.t)}</b> <span class="flag ${done===n?'ok':'na'}">${done} / ${n} étapes</span></summary><div style="margin-top:10px">${kbProtoHTML(f,{check:true,job})}</div></details>`}).join('')}</section>`}
+/* page « Fiches techniques » */
+function renderFiches(){const k=kbSet();const m=view.kbModel&&kbModel(view.kbModel);
+  if(!m)return`<div class="stack"><div class="row spread"><h1>Fiches techniques</h1><button class="btn" id="kbNewModel">+ Ajouter un modèle</button></div>
+   <p class="small muted" style="margin:0">Pannes courantes et protocoles de réparation par modèle. Choisissez le modèle à la réception d’un dossier : le diagnostic propose alors les pannes probables.</p>
+   <div class="grid">${kbModels().map(x=>`<button class="job" style="grid-template-columns:1fr" data-kbopen="${esc(x.id)}"><span class="who"><b style="white-space:normal">${esc(x.name)}</b><span class="muted small">${esc(x.brand)} · ${esc(x.tension||'?')} V · ${kbFaults(x).length} pannes</span></span></button>`).join('')}</div>
+   <div id="kbNewBox"></div></div>`;
+  const isCustom=!KB_MODELS.some(x=>x.id===m.id);
+  return`<div class="stack"><div class="row"><button class="btn ghost sm" data-kbopen="">← Fiches</button><h1>${esc(m.name)}</h1></div>
+   <div class="grid2"><section class="panel section"><h3>Caractéristiques</h3><table class="tbl"><tbody>${(m.specs||[]).map(([a,b])=>`<tr><th style="width:35%">${esc(a)}</th><td>${esc(b)}</td></tr>`).join('')||'<tr><td class="muted">—</td></tr>'}</tbody></table>
+     <p class="small muted" style="margin:0">Valeurs indicatives : vérifiez l’étiquette de la batterie et la version exacte du modèle.</p></section>
+    <section class="panel section"><h3>Mes notes atelier</h3><textarea data-kbnote="${esc(m.id)}" placeholder="Références de pièces, fournisseurs, astuces…" style="min-height:110px">${esc(k.notes[m.id]||'')}</textarea>
+     ${(m.src||[]).length?`<h3>Documents et sources</h3><ul style="margin:0;padding-left:18px">${m.src.map(([t,u])=>`<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')}</ul>`:''}</section></div>
+   <section class="panel section"><h3>Pannes courantes et protocoles</h3>
+    ${kbFaults(m).map(f=>`<details style="border:1px solid var(--line);border-radius:6px;padding:10px 12px"><summary style="cursor:pointer"><b>${esc(f.t)}</b> <span class="flag na">${FREQ_L[f.freq]||'Ma panne'}</span>${(f.codes||[]).length?` <span class="small muted">codes ${esc(f.codes.join(', '))}</span>`:''}</summary>
+     <div style="margin-top:10px" class="stack">${f.sym?`<p class="small muted" style="margin:0">${esc(f.sym)}</p>`:''}${kbProtoHTML(f)}${f.custom?`<div><button class="btn sm danger" data-kbdelf="${esc(f.id)}">Supprimer cette panne</button></div>`:''}</div></details>`).join('')}
+   </section>
+   <section class="panel section"><h3>Ajouter ma panne / mon protocole</h3>
+    <div class="grid"><label class="f">Panne<input id="kbFt" placeholder="Ex. Connecteur de charge fondu"></label><label class="f">Codes (séparés par des virgules)<input id="kbFc" placeholder="Ex. 21, 24"></label><label class="f">Temps (min)<input id="kbFm" inputmode="numeric" placeholder="30"></label></div>
+    <label class="f">Symptômes<input id="kbFs" placeholder="Ce que le client constate"></label>
+    <label class="f">Étapes (une par ligne)<textarea id="kbFp" placeholder="Débrancher la batterie&#10;Démonter…&#10;Tester…"></textarea></label>
+    <div><button class="btn primary" id="kbAddF">Ajouter à cette fiche</button>${isCustom?' <button class="btn danger" id="kbDelModel">Supprimer ce modèle</button>':''}</div></section></div>`}
+function kbBind(app){
+ app.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const job=view.page==='job'?curJob():null;
+  if(b.dataset.kbadd!=null&&job){kbAdd(job,b.dataset.kbadd);return}
+  if(b.dataset.kbview!=null){kbView(job,b.dataset.kbview);return}
+  if(b.dataset.kbopen!=null){go({page:'fiches',kbModel:b.dataset.kbopen||null});return}
+  if(b.dataset.kbdelf){const k=kbSet();k.extra[view.kbModel]=(k.extra[view.kbModel]||[]).filter(f=>f.id!==b.dataset.kbdelf);saveSettingsSoon();render();toast('Panne supprimée');return}
+  if(b.id==='kbAddF'){const t=$('#kbFt').value.trim();const steps=$('#kbFp').value.split(/\n/).map(x=>x.trim()).filter(Boolean);if(!t||!steps.length)return toast('Indiquez la panne et au moins une étape');
+   const k=kbSet();(k.extra[view.kbModel]=k.extra[view.kbModel]||[]).push({id:'u'+uid(),custom:true,t,freq:2,codes:$('#kbFc').value.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean),fam:[],sym:$('#kbFs').value.trim(),min:Math.round(num($('#kbFm').value)||30),steps,parts:[]});saveSettingsSoon();render();toast('Panne ajoutée à la fiche');return}
+  if(b.id==='kbNewModel'){$('#kbNewBox').innerHTML=`<section class="panel section"><h3>Nouveau modèle</h3><div class="grid"><label class="f">Nom du modèle<input id="kbMn" placeholder="Ex. iScooter i9"></label><label class="f">Marque<input id="kbMb"></label><label class="f">Tension (V)<input id="kbMv" inputmode="numeric" value="36"></label></div><label class="f">Caractéristiques (une par ligne, « Nom : valeur »)<textarea id="kbMs" placeholder="Batterie : 36 V 7,5 Ah&#10;Moteur : 350 W&#10;Pneus : 8,5&quot;"></textarea></label><div><button class="btn primary" id="kbSaveModel">Créer la fiche</button></div></section>`;return}
+  if(b.id==='kbSaveModel'){const n=$('#kbMn').value.trim();if(!n)return toast('Indiquez le nom du modèle');const k=kbSet();const id='m'+uid();
+   k.models.push({id,brand:$('#kbMb').value.trim()||'Autre',name:n,codeBrand:'',tension:$('#kbMv').value.trim(),specs:$('#kbMs').value.split(/\n/).map(x=>x.split(/\s*:\s*/)).filter(x=>x[0]&&x[0].trim()).map(x=>[x[0].trim(),x.slice(1).join(':').trim()]),faults:[],src:[]});saveSettingsSoon();go({page:'fiches',kbModel:id});toast('Fiche créée : ajoutez ses pannes');return}
+  if(b.id==='kbDelModel'){ask('Supprimer ce modèle et ses pannes ?','Supprimer',()=>{const k=kbSet();k.models=k.models.filter(x=>x.id!==view.kbModel);delete k.extra[view.kbModel];saveSettingsSoon();go({page:'fiches',kbModel:null})});return}
+ });
+ app.addEventListener('change',e=>{const el=e.target;const job=view.page==='job'?curJob():null;if(el.id==='kbModelSel'&&job){kbSelectModel(job,el.value)}});
+ app.addEventListener('input',e=>{const el=e.target;if(el.dataset.kbnote){kbSet().notes[el.dataset.kbnote]=el.value;saveSettingsSoon()}});
+}
 
 function renderJobs(){
   const all=[...S.jobs.values()].sort((a,b)=>b.createdAt-a.createdAt);
@@ -1691,6 +1974,7 @@ function stepReception(job){
      <div class="grid">${F(r+'client',{label:'Nom du client'})}${F(r+'tel',{label:'Téléphone',type:'tel'})}${F(r+'date',{label:'Date de réception',type:'date'})}</div>
    </section>
    <section class="panel section"><h3>Trottinette</h3>
+     <label class="f">Modèle (fiche technique : pannes et protocoles)<select id="kbModelSel">${kbModelOptions(job.rec.modelId||'')}</select></label>
      <div class="grid">${F(r+'marque',{label:'Marque',ph:'Xiaomi, Ninebot, Kaabo…'})}${F(r+'modele',{label:'Modèle'})}${F(r+'serie',{label:'N° de série'})}
      ${F(r+'tension',{label:'Tension batterie',type:'select',options:[['24','24 V'],['36','36 V'],['48','48 V'],['52','52 V'],['60','60 V'],['72','72 V']]})}
      ${F(r+'puissance',{label:'Puissance moteur (W)',type:'num'})}${F(r+'km',{label:'Kilométrage (km)',type:'num'})}</div>
@@ -1739,6 +2023,7 @@ function stepDiag(job){
     <div class="meas">${mos}</div>
    </section>
   </div>
+  <section class="panel section" id="kbDiag"></section>
   <section class="panel section"><div class="row spread"><h3>Pannes constatées</h3><span class="small muted">Surlignées : suggérées par vos réponses et mesures</span></div>
    <div class="stack" style="gap:6px" id="faultList"></div>
    ${F('diag.conclusion',{type:'textarea',label:'Conclusion du diagnostic',ph:'Ce que vous avez trouvé, à expliquer au client'})}
@@ -1759,7 +2044,7 @@ function stepDevis(job){
       <td class="r num" data-lt="${l.id}"></td><td class="r"><button class="btn ghost sm" data-rm="${l.id}" aria-label="Retirer">✕</button></td></tr>`;
   }).join('');
   // pièces suggérées
-  const cats = [...new Set(lines.filter(l=>l.kind==='mo').map(l=>opById(l.opId)?.cat).filter(Boolean))];
+  const cats = [...new Set(lines.filter(l=>l.kind==='mo').flatMap(l=>[opById(l.opId)?.cat,...(l.kbParts||[])]).filter(Boolean))];
   const pieces=[...S.pieces.values()];
   const sugg = cats.map(c=>{ const ps=pieces.filter(p=>p.cat===c); return `<div class="row" style="gap:6px"><span class="small muted" style="min-width:110px">${esc(c)} :</span>${ps.length? ps.map(p=>`<button class="chip" data-addpiece="${p.id}">＋ ${esc(p.nom)} · ${DT(p.prix)}</button>`).join('') : `<span class="small muted">aucune pièce de cette catégorie dans vos tarifs</span>`}</div>`; }).join('');
   return `<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
@@ -1791,7 +2076,7 @@ function stepDevis(job){
 function stepRep(job){
   const lines=job.devis.lines;
   if(!lines.length) return `<div class="empty">Le devis est vide. Ajoutez les opérations à l’étape Devis.</div>`;
-  return `<section class="panel section"><h3>Travaux à réaliser</h3>
+  return kbRepHTML(job)+`<section class="panel section"><h3>Travaux à réaliser</h3>
    <div class="scroll"><table class="tbl"><thead><tr><th>Fait</th><th>Opération / pièce</th><th class="r">Prévu</th><th class="r">Temps réel (min)</th></tr></thead><tbody>
    ${lines.map(l=>`<tr><td><input type="checkbox" data-f="rep.done.${l.id}" ${job.rep.done?.[l.id]?'checked':''} aria-label="Fait"></td><td>${esc(l.label)}</td>
      <td class="r num">${l.kind==='mo'?hm(l.minutes):'×'+l.qty}</td>
@@ -1873,7 +2158,7 @@ function refresh(){
   if(view.step==='diagnostic'){
     MEAS.forEach(m=>{const el=document.querySelector(`[data-meas="${m.k}"]`); if(el){const [c,t]=measState(job,m); el.className='flag '+c; el.textContent=t;}});
     MOS.forEach(([k])=>{const el=document.querySelector(`[data-mos="${k}"]`); if(el){const [c,t]=mosState(job,k); el.className='flag '+c; el.textContent=t;}});
-    $('#diagHint').textContent = nextHint(job);
+    $('#diagHint').textContent = nextHint(job); kbDiagRender(job);
     const co=$('#codeOut'); if(co){ const ci=codeInfo(job); co.innerHTML = ci?`<span class="flag warn">${esc(ci[2])}</span>`:(job.diag.code?'<span class="muted">Code inconnu pour cette marque : vérifiez le manuel.</span>':''); }
     const sug=suggested(job);
     $('#faultList').innerHTML = FAULTS.map(f=>`<label class="fault ${sug.has(f.id)?'sug':''}" for="fl-${f.id}"><input type="checkbox" id="fl-${f.id}" data-fault="${f.id}" ${job.diag.faults?.[f.id]?'checked':''}><span>${f.label}${sug.has(f.id)?' <span class="flag warn">Suggéré</span>':''}<br><span class="small muted">${f.ops.map(o=>opById(o)?.label).filter(Boolean).join(' · ')}</span></span></label>`).join('');
