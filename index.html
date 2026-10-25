@@ -661,7 +661,7 @@ function ficheModal(id){const src=id?S.devis[id]:null;const nextNum='F'+String(O
    <div class="pick"><div class="row" style="flex-wrap:nowrap"><input class="f" id="fAdd" placeholder="Chercher un article ou un service (nom ou code)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="btn" data-act="fBrowse">Catégories</button></div><div class="sugg" id="fSugg" hidden></div></div>
    <div id="fLines"></div>
    <div id="fDep"></div>
-  </div><div class="sh-f">${src?'<button class="btn danger" data-act="delFiche">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="printDevis">Imprimer le devis</button><button class="btn ok" data-act="waReady" id="waReadyBtn" ${fd.status==='pret'?'':'hidden'}>📲 Prévenir le client</button><button class="btn" data-act="waDevis">📲 Envoyer le devis par WhatsApp</button><button class="btn" data-act="invFromFiche">${invoiceOf('devis',fd.id)?'Voir la facture':'Facture'}</button><button class="btn" data-act="saveFiche">Enregistrer</button>${fd.paid?'':'<button class="btn ok" data-act="cashFiche">Encaisser</button>'}</div>`,true);
+  </div><div class="sh-f">${src?'<button class="btn danger" data-act="delFiche">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="printDevis">Imprimer le devis</button><button class="btn ok" data-act="waReady" id="waReadyBtn" ${fd.status==='pret'?'':'hidden'}>📲 Prévenir le client</button><button class="btn" data-act="waDevis">📲 Envoyer le devis</button><button class="btn" data-act="invFromFiche">${invoiceOf('devis',fd.id)?'Voir la facture':'Facture'}</button><button class="btn" data-act="saveFiche">Enregistrer</button>${fd.paid?'':'<button class="btn ok" data-act="cashFiche">Encaisser</button>'}</div>`,true);
   $('#fCode').addEventListener('change',()=>{const c=S.clients[U($('#fCode').value)];if(c){$('#fName').value=c.name;$('#fPhone').value=c.phone||'';if(c.bikeBrand&&!$('#fBrand').value)$('#fBrand').value=c.bikeBrand;if(c.bikeType&&!$('#fType').value)$('#fType').value=c.bikeType}renderFL()});
   $('#fAdd').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ficheAddLine()}});
   $('#fAdd').addEventListener('input',()=>fSuggest());
@@ -1357,9 +1357,9 @@ function waDetail(d){const L=d.lines||[];const isOp=l=>l.type==='service'||catsO
   return out.join('\n')||'(aucune ligne)'}
 function waReady(){readFiche();const st=$('#fStatus');if(st&&st.value!=='pret')return toast('Passez d\'abord la fiche au statut « Prêt à sortir »');
   if(!fd.phone)return toast('Indiquez le n° mobile du client dans la fiche');saveFiche(true);
-  const reste=r3(devisNet(fd)-(fd.paid?devisNet(fd):depositSum(fd.id)));waOpen(fd.phone,waFill(waTpl('waReady'),fd,reste))}
+  const reste=r3(devisNet(fd)-(fd.paid?devisNet(fd):depositSum(fd.id)));msgChoice(fd.phone,waFill(waTpl('waReady'),fd,reste),'Prévenir le client')}
 function waDevis(){readFiche();if(!fd.phone)return toast('Indiquez le n° mobile du client dans la fiche');if(!(fd.lines||[]).length)return toast('Le devis est vide');saveFiche(true);
-  waOpen(fd.phone,waFill(waTpl('waDevis'),fd,devisNet(fd),waDetail(fd)))}
+  msgChoice(fd.phone,waFill(waTpl('waDevis'),fd,devisNet(fd),waDetail(fd)),'Envoyer le devis')}
 function waBtnSync(){const b=$('#waReadyBtn'),s=$('#fStatus');if(b&&s)b.hidden=s.value!=='pret'}
 function waSaveSettings(){const s={...(S.settings.main||{}),waReady:$('#sWaReady').value.trim()||WA_DEF.waReady,waDevis:$('#sWaDevis').value.trim()||WA_DEF.waDevis};put('settings','main',s);toast('Messages WhatsApp enregistrés')}
 function waSettingsPanel(){const ex={clientName:'Ahmed',bikeType:'VTT',lines:[],discount:0};
@@ -1369,6 +1369,16 @@ function waSettingsPanel(){const ex={clientName:'Ahmed',bikeType:'VTT',lines:[],
   <label class="fl">Message « Envoyer le devis »<textarea class="f" id="sWaDevis" rows="6">${esc(waTpl('waDevis'))}</textarea></label>
   <div class="small muted" id="sWaPrev" style="white-space:pre-line;background:var(--panel2);padding:10px;border-radius:8px">Aperçu : ${esc(waFill(waTpl('waReady'),ex,85))}</div>
   <div class="row"><button class="btn" data-act="waReset">Remettre les textes d'origine</button><span class="spacer"></span><button class="btn primary" data-act="waSaveSet">Enregistrer les messages</button></div></div>`}
+/* choix WhatsApp ou SMS */
+let msgCtx=null;
+function msgChoice(phone,text,title){const n=waNum(phone);if(!n)return toast('Numéro de téléphone du client manquant ou incorrect');msgCtx={phone,back:fd&&fd.id};
+  openModal(head(esc(title),esc((fd&&fd.clientName?fd.clientName+' · ':'')+'+'+n.slice(0,3)+' '+n.slice(3)))+`<div class="sh-b">
+   <label class="fl">Message (vous pouvez le modifier avant l'envoi)<textarea class="f" id="msgTxt" rows="${Math.min(14,Math.max(4,text.split('\n').length+1))}">${esc(text)}</textarea></label>
+   <p class="small muted" style="margin:0">WhatsApp : si le client n'a pas WhatsApp sur ce numéro, WhatsApp vous le dira, revenez alors ici et choisissez SMS. Le SMS part de votre téléphone, au tarif de votre forfait.</p>
+  </div><div class="sh-f"><button class="btn" data-act="msgBack">Retour à la fiche</button><span class="spacer"></span><button class="btn" data-act="msgSms" style="min-width:120px">💬 SMS</button><button class="btn ok" data-act="msgWa" style="min-width:140px">📲 WhatsApp</button></div>`)}
+function msgSend(kind){if(!msgCtx)return;const t=($('#msgTxt')||{}).value||'';const n=waNum(msgCtx.phone);if(!n)return toast('Numéro incorrect');
+  if(kind==='wa')return waOpen(msgCtx.phone,t);
+  const ios=/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);const url='sms:+'+n+(ios?'&':'?')+'body='+encodeURIComponent(t);location.href=url}
 
 /* ================= VUE RÉGLAGES ================= */
 V.reglages={build(el){const c=cfg();el.innerHTML=`<div class="view" style="max-width:900px"><h1>Réglages</h1>
@@ -1433,7 +1443,7 @@ const A={
  pad:e=>{const t=$('#'+e.dataset.t);if(!t)return;const k=e.dataset.k;if(k==='⌫')t.value=t.value.slice(0,-1);else if(k===','){if(!t.value.includes(','))t.value+=','}else t.value+=k;t.dispatchEvent(new Event('input'));t.focus()},
  npOk:()=>{const raw=$('#npIn').value;const v=pnum(raw);const cb=modalCtx&&modalCtx.onOk;closeModal();cb&&cb(v)},
  showTicket:e=>showReceipt(e.dataset.id),
- waReady:()=>waReady(),waDevis:()=>waDevis(),waSaveSet:()=>waSaveSettings(),waReset:()=>{$('#sWaReady').value=WA_DEF.waReady;$('#sWaDevis').value=WA_DEF.waDevis;toast('Textes d\'origine remis : touchez « Enregistrer les messages » pour valider')},
+ waReady:()=>waReady(),waDevis:()=>waDevis(),msgWa:()=>msgSend('wa'),msgSms:()=>msgSend('sms'),msgBack:()=>{if(msgCtx&&msgCtx.back&&S.devis[msgCtx.back])ficheModal(msgCtx.back);else closeModal()},waSaveSet:()=>waSaveSettings(),waReset:()=>{$('#sWaReady').value=WA_DEF.waReady;$('#sWaDevis').value=WA_DEF.waDevis;toast('Textes d\'origine remis : touchez « Enregistrer les messages » pour valider')},
  cgF:e=>{cgF=e.dataset.f;V.depot.refresh()},cgNew:()=>consModal(),cgEdit:e=>consModal(e.dataset.id),cgSave:()=>cgSave(),cgSell:()=>cgSell(),cgPay:()=>{if(cgSave(true))cgPayModal()},cgPayOk:()=>cgPayOk(),cgUnpay:()=>cgUnpay(),cgReturn:()=>cgReturn(),cgDel:()=>cgDelete(),
  cgPrint:()=>{cgRead();odOutCg('contrat-depot-'+cg.num+'.html',cgDoc(cg))},cgPrintPay:()=>{const c=S.consign[cg.id];if(c)odOutCg('recu-depot-'+c.num+'.html',cgPayDoc(c))},
  cgNext:()=>cgNext(),cgPrintGroup:()=>{cgRead();const l=cgSiblings(cg);if(l.length)odOutCg('contrat-depot-'+(cg.ownerName||'deposant').replace(/\W+/g,'-')+'.html',cgGroupDoc(l))},
