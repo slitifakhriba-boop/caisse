@@ -1833,6 +1833,80 @@ const KB_MODELS=[
    {id:'rlt',t:'Roulements bruyants',freq:1,codes:[],fam:['moteur'],sym:'Grondement en roulant.',p:'roulements',parts:['Roulement']}],
   src:[['Codes Zero / Vsett / Kugoo (LOCO)','https://locoscooters.ie/blogs/electric-scooter-ireland-blog/the-ultimate-electric-scooter-error-list'],['Liste de codes d’erreur toutes marques (iScooter)','https://www.iscooterglobal.co.uk/blogs/news/electric-scooter-error-codes-list']]}
 ];
+/* ---- Tests et mesures par protocole · min/max = plage attendue ; sans plage = test OK / Non ----
+   rel:'bat' = tension batterie (selon tension nominale) · rel:'chg' = tension de sortie du chargeur · rel:'psi' = pression du modèle */
+const KB_T={
+ cable_moteur:[
+  {l:'Résistance entre phases (U-V, V-W, W-U)',how:'Multimètre en Ω, moteur débranché du contrôleur. Les 3 valeurs doivent être faibles et presque identiques.',u:'Ω',min:0.05,max:2},
+  {l:'Isolement phase → axe / masse',how:'Multimètre en Ω (calibre le plus haut) : doit afficher OL (infini). Une valeur = fil dénudé qui touche l’axe.'},
+  {l:'Alimentation des capteurs Hall',how:'Fils rouge (+) et noir (−) du connecteur Hall, contrôleur sous tension.',u:'V',min:4.5,max:5.5},
+  {l:'Signaux Hall A, B, C',how:'Roue tournée lentement à la main : chaque signal alterne entre ≈ 0 V et ≈ 5 V. Un signal bloqué = capteur ou fil HS.'},
+  {l:'Câble à la sortie de l’axe',how:'Contrôle visuel : gaine intacte, pas de fil écrasé, pas de trace de brûlé.'}],
+ controleur:[
+  {l:'Tension d’entrée B+ / B−',how:'Au connecteur batterie du contrôleur, batterie branchée.',u:'V',rel:'bat'},
+  {l:'Alimentation 5 V',how:'Sur le connecteur Hall ou gâchette (rouge / noir).',u:'V',min:4.75,max:5.25},
+  {l:'Test diode MOSFET (6 mesures)',how:'Contrôleur hors tension, batterie débranchée. Mode diode : B− → U, V, W puis U, V, W → B+. Indiquez la valeur la plus éloignée ; les 6 doivent être proches.',u:'V',min:0.3,max:0.6},
+  {l:'Pas de court-circuit B+ / B−',how:'Mode Ω, batterie débranchée : la valeur doit monter (charge des condensateurs), jamais rester à 0.'},
+  {l:'État de la carte',how:'Pas d’eau, pas d’oxydation, pas de composant brûlé ni de condensateur gonflé.'}],
+ gachette:[
+  {l:'Alimentation de la gâchette',how:'Fils rouge (+) et noir (−) du connecteur de gâchette.',u:'V',min:4.75,max:5.25},
+  {l:'Signal au repos',how:'Fil signal / masse, gâchette relâchée.',u:'V',min:0.6,max:1.1},
+  {l:'Signal à fond',how:'Fil signal / masse, gâchette appuyée à fond.',u:'V',min:3.5,max:4.5},
+  {l:'Montée régulière',how:'En appuyant doucement, la tension monte sans saut ni coupure.'}],
+ frein_capteur:[
+  {l:'Alimentation du capteur de frein',how:'Fils + et − du connecteur du levier.',u:'V',min:4.75,max:5.25},
+  {l:'Signal levier relâché / serré',how:'Le signal doit changer franchement quand on serre le levier puis revenir quand on relâche.'},
+  {l:'Retour du levier',how:'Le levier revient seul en butée (ressort, câble pas trop tendu).'},
+  {l:'Coupure moteur et feu stop',how:'Roue levée, gâchette appuyée : le moteur coupe et le feu stop s’allume dès qu’on freine.'}],
+ tableau_bord:[
+  {l:'Continuité de chaque fil du câble principal',how:'Mode Ω, fil par fil entre le connecteur du tableau de bord et celui du contrôleur, en pliant la colonne et en tournant le guidon. Indiquez la valeur la plus haute.',u:'Ω',min:0,max:1},
+  {l:'Alimentation au connecteur du tableau de bord',how:'Tension présente sur les fils d’alimentation quand on allume (selon modèle : tension batterie ou 5 V).'},
+  {l:'Connecteurs',how:'Broches propres, sans oxydation, bien verrouillées.'}],
+ batterie:[
+  {l:'Tension du pack',how:'Aux bornes de la batterie, chargeur débranché.',u:'V',rel:'bat'},
+  {l:'Tension la plus basse d’un groupe de cellules',how:'Sur les fils d’équilibrage du BMS si accessibles.',u:'V',min:3.0,max:4.2},
+  {l:'Écart entre groupes de cellules',how:'Plus haute − plus basse.',u:'V',min:0,max:0.1},
+  {l:'Pack sain',how:'Pas de cellule gonflée, chaude, oxydée ni de fuite.'},
+  {l:'Communication BMS ↔ contrôleur',how:'Câble et connecteur de données intacts, plus de code 21 à 24 après rebranchement.'}],
+ charge:[
+  {l:'Tension de sortie du chargeur à vide',how:'Sur la fiche du chargeur branché au secteur.',u:'V',rel:'chg'},
+  {l:'Continuité port de charge → batterie',how:'Mode Ω, fil + et fil −. Indiquez la valeur la plus haute.',u:'Ω',min:0,max:1},
+  {l:'LED du chargeur',how:'Rouge pendant la charge, verte à la fin.'}],
+ pneu_chambre:[
+  {l:'Pression après gonflage',how:'Au manomètre, à froid.',u:'psi',rel:'psi'},
+  {l:'Tenue de la pression',how:'Pression identique 10 min plus tard.'},
+  {l:'Talon bien en place',how:'Le liseré du pneu est régulier des deux côtés.'},
+  {l:'Câble moteur libre',how:'Le câble moteur ne frotte pas et n’est pas pincé après remontage.'}],
+ pneu_tubeless:[
+  {l:'Pression après gonflage',how:'Au manomètre, à froid.',u:'psi',rel:'psi'},
+  {l:'Étanchéité (eau savonneuse)',how:'Aucune bulle sur la bande, la valve et les talons après 10 min.'}],
+ frein_disque:[
+  {l:'Épaisseur de garniture des plaquettes',how:'Au réglet ou pied à coulisse.',u:'mm',min:1,max:6},
+  {l:'Disque',how:'Pas voilé, pas rayé profondément, pas gras.'},
+  {l:'Course du levier',how:'Le levier freine fermement avant la mi-course.'},
+  {l:'Roue libre',how:'Pas de frottement permanent roue tournée à la main.'}],
+ frein_tambour:[
+  {l:'Garde au levier',how:'Le frein commence à agir après un petit jeu, sans toucher le guidon.'},
+  {l:'Blocage de la roue',how:'Levier serré, la roue ne tourne plus à la main.'},
+  {l:'Roue libre',how:'Levier relâché, la roue tourne sans frotter.'}],
+ pliage:[
+  {l:'Jeu colonne dépliée',how:'Secouer la colonne d’avant en arrière et sur les côtés : aucun claquement.'},
+  {l:'Jeu de direction',how:'Frein avant serré, pousser / tirer : pas de jeu dans les roulements de colonne.'},
+  {l:'Verrouillage du pliage',how:'Le crochet / levier verrouille franchement et ne peut pas s’ouvrir seul.'}],
+ feu_arriere:[
+  {l:'Feu arrière allumé',how:'Lumières activées.'},
+  {l:'Feu stop',how:'Le feu s’intensifie ou clignote au freinage.'},
+  {l:'Passage du fil',how:'Le fil est fixé et ne touche plus le pneu.'}],
+ etancheite:[
+  {l:'Tension B+ / B− au contrôleur',how:'Après séchage et rebranchement.',u:'V',rel:'bat'},
+  {l:'Cartes sèches et propres',how:'Plus de trace d’eau ni d’oxydation verte / blanche.'},
+  {l:'Joints refaits',how:'Joint du plateau et passages de câbles étanches.'}],
+ roulements:[
+  {l:'Rotation libre',how:'Roue tournée à la main : pas de point dur ni de grattement.'},
+  {l:'Jeu radial',how:'Roue saisie en haut et en bas : aucun jeu.'},
+  {l:'Bruit en roulant',how:'Essai : plus de grondement.'}]
+};
+const KB_PSI={xm365:[45,55],xpro:[45,55],g30:[32,37]};
 
 /* ---- Fiches techniques : outils ---- */
 const FREQ_L={3:'Très courant',2:'Courant',1:'Occasionnel'};
@@ -1863,7 +1937,7 @@ function kbAdd(job,fid){const m=kbModel(job.rec.modelId);const f=kbFault(m,fid);
   if(!job.devis.lines.some(l=>l.kbFault===fid))job.devis.lines.push({id:uid(),kind:'mo',opId:'kb:'+fid,kbFault:fid,kbParts:f.parts||[],label:P.t,minutes:P.min,rate:S.settings.tauxHoraire||0});
   saveJobSoon(job);toast('Panne ajoutée : opération au devis + protocole dans l’étape Réparation');render()}
 function kbView(job,fid){const m=kbModel(job?job.rec.modelId:view.kbModel);const f=kbFault(m,fid);if(!f)return;
-  openModal(head(esc(f.t),esc(m.name))+`<div class="sh-b">${f.sym?`<p class="small muted" style="margin:0">${esc(f.sym)}</p>`:''}${kbProtoHTML(f)}</div><div class="sh-f"><span class="spacer"></span><button class="btn primary" data-act="close">Fermer</button></div>`,true)}
+  openModal(head(esc(f.t),esc(m.name))+`<div class="sh-b">${f.sym?`<p class="small muted" style="margin:0">${esc(f.sym)}</p>`:''}${kbProtoHTML(f)}${kbTestsTable(f,{tension:job?job.rec.tension:m.tension,modelId:m.id})}</div><div class="sh-f"><span class="spacer"></span><button class="btn primary" data-act="close">Fermer</button></div>`,true)}
 function kbRepHTML(job){const m=kbModel(job.rec.modelId);const fs=(job.kb||[]).map(id=>kbFault(m,id)).filter(Boolean);if(!fs.length)return'';
   return`<section class="panel section"><h3>Protocoles de réparation</h3>${fs.map(f=>{const n=kbProto(f).steps.length;const done=kbProto(f).steps.filter((s,i)=>getP(job,'rep.proto.'+f.id+'.'+i)).length;
    return`<details ${done<n?'open':''} style="border:1px solid var(--line);border-radius:6px;padding:10px 12px"><summary style="cursor:pointer"><b>${esc(f.t)}</b> <span class="flag ${done===n?'ok':'na'}">${done} / ${n} étapes</span></summary><div style="margin-top:10px">${kbProtoHTML(f,{check:true,job})}</div></details>`}).join('')}</section>`}
@@ -1883,11 +1957,12 @@ function renderFiches(){const k=kbSet();const m=view.kbModel&&kbModel(view.kbMod
      ${(m.src||[]).length?`<h3>Documents et sources</h3><ul style="margin:0;padding-left:18px">${m.src.map(([t,u])=>`<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')}</ul>`:''}</section></div>
    <section class="panel section"><h3>Pannes courantes et protocoles</h3>
     ${kbFaults(m).map(f=>`<details style="border:1px solid var(--line);border-radius:6px;padding:10px 12px"><summary style="cursor:pointer"><b>${esc(f.t)}</b> <span class="flag na">${FREQ_L[f.freq]||'Ma panne'}</span>${(f.codes||[]).length?` <span class="small muted">codes ${esc(f.codes.join(', '))}</span>`:''}</summary>
-     <div style="margin-top:10px" class="stack">${f.sym?`<p class="small muted" style="margin:0">${esc(f.sym)}</p>`:''}${kbProtoHTML(f)}${f.custom?`<div><button class="btn sm danger" data-kbdelf="${esc(f.id)}">Supprimer cette panne</button></div>`:''}</div></details>`).join('')}
+     <div style="margin-top:10px" class="stack">${f.sym?`<p class="small muted" style="margin:0">${esc(f.sym)}</p>`:''}${kbProtoHTML(f)}${kbTestsTable(f,{tension:m.tension,modelId:m.id})}${f.custom?`<div><button class="btn sm danger" data-kbdelf="${esc(f.id)}">Supprimer cette panne</button></div>`:''}</div></details>`).join('')}
    </section>
    <section class="panel section"><h3>Ajouter ma panne / mon protocole</h3>
     <div class="grid"><label class="f">Panne<input id="kbFt" placeholder="Ex. Connecteur de charge fondu"></label><label class="f">Codes (séparés par des virgules)<input id="kbFc" placeholder="Ex. 21, 24"></label><label class="f">Temps (min)<input id="kbFm" inputmode="numeric" placeholder="30"></label></div>
     <label class="f">Symptômes<input id="kbFs" placeholder="Ce que le client constate"></label>
+    <label class="f">Tests et mesures (facultatif, une par ligne : « Contrôle ; min ; max ; unité » ou juste « Contrôle »)<textarea id="kbFt2" placeholder="Tension port de charge ; 40 ; 43 ; V&#10;LED chargeur verte en fin de charge"></textarea></label>
     <label class="f">Étapes (une par ligne)<textarea id="kbFp" placeholder="Débrancher la batterie&#10;Démonter…&#10;Tester…"></textarea></label>
     <div><button class="btn primary" id="kbAddF">Ajouter à cette fiche</button>${isCustom?' <button class="btn danger" id="kbDelModel">Supprimer ce modèle</button>':''}</div></section></div>`}
 function kbBind(app){
@@ -1897,7 +1972,7 @@ function kbBind(app){
   if(b.dataset.kbopen!=null){go({page:'fiches',kbModel:b.dataset.kbopen||null});return}
   if(b.dataset.kbdelf){const k=kbSet();k.extra[view.kbModel]=(k.extra[view.kbModel]||[]).filter(f=>f.id!==b.dataset.kbdelf);saveSettingsSoon();render();toast('Panne supprimée');return}
   if(b.id==='kbAddF'){const t=$('#kbFt').value.trim();const steps=$('#kbFp').value.split(/\n/).map(x=>x.trim()).filter(Boolean);if(!t||!steps.length)return toast('Indiquez la panne et au moins une étape');
-   const k=kbSet();(k.extra[view.kbModel]=k.extra[view.kbModel]||[]).push({id:'u'+uid(),custom:true,t,freq:2,codes:$('#kbFc').value.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean),fam:[],sym:$('#kbFs').value.trim(),min:Math.round(num($('#kbFm').value)||30),steps,parts:[]});saveSettingsSoon();render();toast('Panne ajoutée à la fiche');return}
+   const k=kbSet();(k.extra[view.kbModel]=k.extra[view.kbModel]||[]).push({id:'u'+uid(),custom:true,t,freq:2,codes:$('#kbFc').value.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean),fam:[],sym:$('#kbFs').value.trim(),min:Math.round(num($('#kbFm').value)||30),steps,parts:[],tests:$('#kbFt2').value.split(/\n/).map(x=>x.split(';').map(y=>y.trim())).filter(x=>x[0]).map(x=>{const t={l:x[0],how:''};if(x[1]!==undefined&&num(x[1])!=null&&num(x[2])!=null){t.min=num(x[1]);t.max=num(x[2]);t.u=x[3]||''}return t})});saveSettingsSoon();render();toast('Panne ajoutée à la fiche');return}
   if(b.id==='kbNewModel'){$('#kbNewBox').innerHTML=`<section class="panel section"><h3>Nouveau modèle</h3><div class="grid"><label class="f">Nom du modèle<input id="kbMn" placeholder="Ex. iScooter i9"></label><label class="f">Marque<input id="kbMb"></label><label class="f">Tension (V)<input id="kbMv" inputmode="numeric" value="36"></label></div><label class="f">Caractéristiques (une par ligne, « Nom : valeur »)<textarea id="kbMs" placeholder="Batterie : 36 V 7,5 Ah&#10;Moteur : 350 W&#10;Pneus : 8,5&quot;"></textarea></label><div><button class="btn primary" id="kbSaveModel">Créer la fiche</button></div></section>`;return}
   if(b.id==='kbSaveModel'){const n=$('#kbMn').value.trim();if(!n)return toast('Indiquez le nom du modèle');const k=kbSet();const id='m'+uid();
    k.models.push({id,brand:$('#kbMb').value.trim()||'Autre',name:n,codeBrand:'',tension:$('#kbMv').value.trim(),specs:$('#kbMs').value.split(/\n/).map(x=>x.split(/\s*:\s*/)).filter(x=>x[0]&&x[0].trim()).map(x=>[x[0].trim(),x.slice(1).join(':').trim()]),faults:[],src:[]});saveSettingsSoon();go({page:'fiches',kbModel:id});toast('Fiche créée : ajoutez ses pannes');return}
@@ -1926,6 +2001,30 @@ function kbPhotoUpload(inp,id){const f=inp.files&&inp.files[0];inp.value='';if(!
   img.onload=()=>{const mx=900,s=Math.min(1,mx/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
    const data=c.toDataURL('image/jpeg',0.8);put('kbphotos',id,{id,img:data,ts:Date.now()});render();toast('Photo enregistrée')};
   img.onerror=()=>{URL.revokeObjectURL(url);toast('Image illisible')};img.src=url}
+/* ---- tests et mesures ---- */
+const kbTests=f=>f.tests||(f.p&&KB_T[f.p])||[];
+function kbRange(t,ctx){const n=+(ctx&&ctx.tension)||36;
+  if(t.rel==='bat')return[+(n*0.83).toFixed(1),+(n*1.17).toFixed(1)];
+  if(t.rel==='chg'){const c=n/36*42;return[+(c*0.97).toFixed(1),+(c*1.03).toFixed(1)]}
+  if(t.rel==='psi'){const r=KB_PSI[ctx&&ctx.modelId];return r||null}
+  return t.min!=null?[t.min,t.max]:null}
+const kbFmtR=(r,u)=>r?`${String(r[0]).replace('.',',')} à ${String(r[1]).replace('.',',')} ${u||''}`:'';
+function kbTestsTable(f,ctx){const T=kbTests(f);if(!T.length)return'';
+  return`<div class="small" style="margin-top:4px"><b>Tests et mesures</b></div><div class="scroll"><table class="tbl"><thead><tr><th>Contrôle</th><th>Comment</th><th class="r">Attendu</th></tr></thead><tbody>${T.map(t=>{const r=kbRange(t,ctx);return`<tr><td>${esc(t.l)}</td><td class="small muted">${esc(t.how)}</td><td class="r num">${r?kbFmtR(r,t.u):t.u==='psi'?'pression du constructeur':'OK'}</td></tr>`}).join('')}</tbody></table></div>`}
+function kbTestsJob(job){const m=kbModel(job.rec.modelId);const fs=(job.kb||[]).map(id=>kbFault(m,id)).filter(f=>f&&kbTests(f).length);
+  if(!fs.length)return`<h3>Tests et mesures</h3><p class="small muted" style="margin:0">Ajoutez une panne au dossier (bouton « Ajouter au dossier ») : ses tests et mesures s’affichent ici avec les valeurs attendues.</p>`;
+  const ctx={tension:job.rec.tension,modelId:job.rec.modelId};
+  return`<h3>Tests et mesures à faire</h3><p class="small muted" style="margin:0">Saisissez vos mesures : la conformité s’affiche aussitôt.</p>${fs.map(f=>`<div class="stack" style="gap:6px"><div><b>${esc(f.t)}</b></div><div class="meas">${kbTests(f).map((t,i)=>{const r=kbRange(t,ctx);const path='diag.kbm.'+f.id+'.'+i;
+    return`<div class="lbl">${esc(t.l)}<small>${esc(t.how)}${r?' · attendu '+kbFmtR(r,t.u):''}</small></div>${r?F(path,{type:'num',ph:t.u||''}):SEG(path,[['ok','OK'],['nok','Non']])}<span class="flag" data-kbt="${esc(f.id)}.${i}"></span>`}).join('')}</div></div>`).join('')}`}
+function kbTestsFlags(job){const ctx={tension:job.rec.tension,modelId:job.rec.modelId};const m=kbModel(job.rec.modelId);
+  document.querySelectorAll('[data-kbt]').forEach(el=>{const[fid,i]=el.dataset.kbt.split('.');const f=kbFault(m,fid);const t=f&&kbTests(f)[+i];if(!t)return;const v=getP(job,'diag.kbm.'+fid+'.'+i);const r=kbRange(t,ctx);
+   if(r){const x=num(v);if(x==null){el.className='flag na';el.textContent='—'}else if(x<r[0]){el.className='flag bad';el.textContent='Trop bas'}else if(x>r[1]){el.className='flag bad';el.textContent='Trop haut'}else{el.className='flag ok';el.textContent='Conforme'}}
+   else{el.className='flag '+(v==='ok'?'ok':v==='nok'?'bad':'na');el.textContent=v==='ok'?'OK':v==='nok'?'Non conforme':'—'}})}
+function kbTestsDoc(job){const m=kbModel(job.rec.modelId);const ctx={tension:job.rec.tension,modelId:job.rec.modelId};const rows=[];
+  (job.kb||[]).forEach(fid=>{const f=kbFault(m,fid);if(!f)return;kbTests(f).forEach((t,i)=>{const v=getP(job,'diag.kbm.'+fid+'.'+i);if(v==null||v==='')return;const r=kbRange(t,ctx);let res;
+   if(r){const x=num(v);res=x==null?'—':x<r[0]?'Trop bas':x>r[1]?'Trop haut':'Conforme'}else res=v==='ok'?'OK':'Non conforme';
+   rows.push(`<tr><td>${esc(t.l)}</td><td class="r">${r?esc(String(v).replace('.',','))+' '+esc(t.u||''):(v==='ok'?'OK':'Non')}</td><td class="r">${r?kbFmtR(r,t.u):'OK'}</td><td class="r">${res}</td></tr>`)})});
+  return rows.length?`<h2>Tests et mesures relevés</h2><table><thead><tr><th>Contrôle</th><th class="r">Valeur</th><th class="r">Attendu</th><th class="r">Résultat</th></tr></thead><tbody>${rows.join('')}</tbody></table>`:''}
 
 function renderJobs(){
   const all=[...S.jobs.values()].sort((a,b)=>b.createdAt-a.createdAt);
@@ -2046,6 +2145,7 @@ function stepDiag(job){
    </section>
   </div>
   <section class="panel section" id="kbDiag"></section>
+  <section class="panel section" id="kbTests">${kbTestsJob(job)}</section>
   <section class="panel section"><div class="row spread"><h3>Pannes constatées</h3><span class="small muted">Surlignées : suggérées par vos réponses et mesures</span></div>
    <div class="stack" style="gap:6px" id="faultList"></div>
    ${F('diag.conclusion',{type:'textarea',label:'Conclusion du diagnostic',ph:'Ce que vous avez trouvé, à expliquer au client'})}
@@ -2180,7 +2280,7 @@ function refresh(){
   if(view.step==='diagnostic'){
     MEAS.forEach(m=>{const el=document.querySelector(`[data-meas="${m.k}"]`); if(el){const [c,t]=measState(job,m); el.className='flag '+c; el.textContent=t;}});
     MOS.forEach(([k])=>{const el=document.querySelector(`[data-mos="${k}"]`); if(el){const [c,t]=mosState(job,k); el.className='flag '+c; el.textContent=t;}});
-    $('#diagHint').textContent = nextHint(job); kbDiagRender(job);
+    $('#diagHint').textContent = nextHint(job); kbDiagRender(job); kbTestsFlags(job);
     const co=$('#codeOut'); if(co){ const ci=codeInfo(job); co.innerHTML = ci?`<span class="flag warn">${esc(ci[2])}</span>`:(job.diag.code?'<span class="muted">Code inconnu pour cette marque : vérifiez le manuel.</span>':''); }
     const sug=suggested(job);
     $('#faultList').innerHTML = FAULTS.map(f=>`<label class="fault ${sug.has(f.id)?'sug':''}" for="fl-${f.id}"><input type="checkbox" id="fl-${f.id}" data-fault="${f.id}" ${job.diag.faults?.[f.id]?'checked':''}><span>${f.label}${sug.has(f.id)?' <span class="flag warn">Suggéré</span>':''}<br><span class="small muted">${f.ops.map(o=>opById(o)?.label).filter(Boolean).join(' · ')}</span></span></label>`).join('');
@@ -2299,7 +2399,7 @@ function devisHTML(job, fiche){
   <h2>${fiche?'Travaux réalisés':'Détail du devis'}</h2><table><thead><tr><th>Désignation</th><th class="r">Temps / Qté</th><th class="r">Taux / PU TTC</th><th class="r">Total TTC</th></tr></thead><tbody>${rows}</tbody></table>
   <table class="tot" style="width:320px;margin-left:auto;margin-top:10px"><tr><td>Main-d’œuvre</td><td class="r">${DT(T.mo)}</td></tr><tr><td>Pièces</td><td class="r">${DT(T.pc)}</td></tr>${T.remise?`<tr><td>Remise ${job.devis.remise} %</td><td class="r">−${DT(T.remise)}</td></tr>`:''}<tr><td class="big">Total TTC</td><td class="r big">${DT(T.ttc)}</td></tr><tr><td>dont TVA ${T.tvaRate} %</td><td class="r">${DT(T.tva)}</td></tr>${trDepSum(job)?`<tr><td>Acomptes versés</td><td class="r">−${DT(trDepSum(job))}</td></tr><tr><td><b>Reste à payer</b></td><td class="r"><b>${DT(T.ttc-trDepSum(job))}</b></td></tr>`:''}</table>
   <p>Temps de réparation estimé : ${hm(T.moMin)}${num(job.devis.delaiPieces)?` · délai pièces : ${job.devis.delaiPieces} jour(s)`:''}</p>
-  ${job.devis.note?`<p>${esc(job.devis.note)}</p>`:''}${tests}
+  ${job.devis.note?`<p>${esc(job.devis.note)}</p>`:''}${fiche?kbTestsDoc(job):''}${tests}
   <div class="sign"><div>Signature de l’atelier</div><div>${fiche?'Reçu par le client':'Bon pour accord, signature du client'}</div></div>
   <script>window.onload=()=>window.print()<\/script></body></html>`;
 }
