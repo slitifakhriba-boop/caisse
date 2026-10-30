@@ -311,7 +311,7 @@ tr.void td{color:var(--muted);text-decoration:line-through}
     <nav class="nav" id="nav">
       <button data-act="go" data-v="vente">Vente</button>
       <button data-act="go" data-v="atelier">Atelier</button>
-      <button data-act="go" data-v="trott">Trottinettes</button>
+      <button data-act="go" data-v="trott">Trottinettes & VAE</button>
       <button data-act="go" data-v="commandes">Commandes</button>
       <button data-act="go" data-v="depot">Dépôt-vente</button>
       <button data-act="go" data-v="produits">Articles</button>
@@ -472,7 +472,7 @@ let cart=loadCart();let sel=-1;
 function emptyCart(){return{lines:[],clientCode:'',discPct:0,discAmt:0,reward:false,devisId:'',note:''}}
 function loadCart(){try{return Object.assign(emptyCart(),JSON.parse(localStorage.getItem(CARTK)||'null')||{})}catch(e){return emptyCart()}}
 function saveCart(){try{localStorage.setItem(CARTK,JSON.stringify(cart))}catch(e){}refreshPOS()}
-function cartTotals(){const sub=r3(cart.lines.reduce((s,l)=>s+lineTotal(l),0));const disc=r3(sub*(+cart.discPct||0)/100+(+cart.discAmt||0));const total=r3(Math.max(0,sub-disc));const deposit=cart.devisId?depositSum(cart.devisId):0;return{sub,disc,total,deposit,due:r3(total-deposit),items:cart.lines.reduce((s,l)=>s+l.qty,0)}}
+function cartTotals(){const sub=r3(cart.lines.reduce((s,l)=>s+lineTotal(l),0));const disc=r3(sub*(+cart.discPct||0)/100+(+cart.discAmt||0));const total=r3(Math.max(0,sub-disc));const deposit=cart.lotIds&&cart.lotIds.length?r3(cart.lotIds.reduce((s,i)=>s+depositSum(i),0)):cart.devisId?depositSum(cart.devisId):0;return{sub,disc,total,deposit,due:r3(total-deposit),items:cart.lines.reduce((s,l)=>s+l.qty,0)}}
 function findProduct(q){return S.products[U(q)]||null}
 function addToCart(code,qty=1){const p=findProduct(code);if(!p){toast('Code inconnu : '+code);return}
   const i=cart.lines.findIndex(l=>l.code===p.code&&!l.disc&&l.price===p.price&&p.price>0);
@@ -546,7 +546,7 @@ function refreshPOS(all){if(view!=='vente'||!$('#tkLines'))return;const t=cartTo
   $('#tkTot').innerHTML=`<div class="l"><span>${cart.lines.length} ligne(s) · ${fmt(t.items).replace(/,000$/,'')} article(s)</span><span>${fmt(t.sub)}</span></div>
     ${t.disc?`<div class="l"><span>Remise${cart.discPct?' '+cart.discPct+' %':''}${cart.reward?' (fidélité)':''}</span><span>−${fmt(t.disc)}</span></div>`:''}
     ${cart.note?`<div class="l"><span>Note : ${esc(cart.note)}</span><span></span></div>`:''}
-    ${cart.devisId&&S.devis[cart.devisId]?`<div class="l"><span>Fiche atelier ${esc(S.devis[cart.devisId].num||'')}</span><span></span></div>`:''}${cart.devisId&&(S.trott||{})[cart.devisId]?`<div class="l"><span>Dossier trottinette ${esc(S.trott[cart.devisId].num||'')}</span><span></span></div>`:''}${cart.devisId&&(S.orders||{})[cart.devisId]?`<div class="l"><span>Commande ${esc(S.orders[cart.devisId].num||'')}</span><span></span></div>`:''}
+    ${cart.lotIds&&cart.lotIds.length?`<div class="l"><span>Dépôt ${esc((S.devis[cart.lotIds[0]]||{}).lotNum||'')} · ${cart.lotIds.length} vélo(s)</span><span></span></div>`:''}${cart.devisId&&S.devis[cart.devisId]?`<div class="l"><span>Fiche atelier ${esc(S.devis[cart.devisId].num||'')}</span><span></span></div>`:''}${cart.devisId&&(S.trott||{})[cart.devisId]?`<div class="l"><span>Dossier trottinette ${esc(S.trott[cart.devisId].num||'')}</span><span></span></div>`:''}${cart.devisId&&(S.orders||{})[cart.devisId]?`<div class="l"><span>Commande ${esc(S.orders[cart.devisId].num||'')}</span><span></span></div>`:''}
     ${t.deposit?`<div class="l"><span>Total des travaux</span><span>${fmt(t.total)}</span></div><div class="l" style="color:var(--ok)"><span>Acompte déjà versé</span><span>−${fmt(t.deposit)}</span></div>`:''}
     <div class="big"><span>${t.deposit?'Reste à payer':'Total'}</span><span>${fmt(t.due)}</span></div>`;
   $('#payBtn').disabled=!cart.lines.length;
@@ -603,11 +603,12 @@ function payModal(){if(!cart.lines.length)return;payPart=false;const t=cartTotal
 function updChange(){const r=$('#recv');if(!r)return;const t=cartTotals().due;const v=pnum(r.value);const ch=isNaN(v)?0:v-t;$('#chg').textContent=fmt(Math.max(0,ch));$('#chg').style.color=ch<0?'var(--bad)':''}
 function finishPay(){const t=cartTotals();let recv=t.due;let part=null;if(payPart&&$('#partOn')&&$('#partOn').checked&&t.due>0){part=partValues(t.due);if(part.err)return toast(part.err);recv=part.now}if(!part&&payMethod==='especes'&&t.due>0){const v=pnum(($('#recv')||{}).value);if(!isNaN(v)){if(v<t.due-0.0005)return toast('Montant reçu insuffisant');recv=v}}
   const d=derive();const date=today();const cc=U(cart.clientCode);const cli=S.clients[cc];
-  const tk={id:uid('T'),v:2,device:DEVICE,num:d.valid.filter(x=>x.date===date&&(x.device||'')===DEVICE).length+1,date,ts:Date.now(),lines:cart.lines.map(l=>({...l})),sub:t.sub,discPct:+cart.discPct||0,discAmt:+cart.discAmt||0,discount:t.disc,total:t.total,deposit:t.deposit,depositIds:cart.devisId?depositsOf(cart.devisId).map(x=>x.id):[],
+  const tk={id:uid('T'),v:2,device:DEVICE,num:d.valid.filter(x=>x.date===date&&(x.device||'')===DEVICE).length+1,date,ts:Date.now(),lines:cart.lines.map(l=>({...l})),sub:t.sub,discPct:+cart.discPct||0,discAmt:+cart.discAmt||0,discount:t.disc,total:t.total,deposit:t.deposit,depositIds:(cart.lotIds&&cart.lotIds.length?cart.lotIds:cart.devisId?[cart.devisId]:[]).flatMap(i=>depositsOf(i).map(x=>x.id)),...(cart.lotIds&&cart.lotIds.length?{lotIds:[...cart.lotIds]}:{}),
     method:payMethod,received:r3(recv),change:r3(Math.max(0,recv-t.due)),clientCode:cc,clientName:cli?cli.name:'',reward:!!cart.reward,devisId:cart.devisId||'',note:cart.note||'',...(part?{credit:part.credit,dueDate:part.dueDate,paidNow:part.now}:{})};
   put('tickets',tk.id,tk);consOnTicket(tk,false);trOnTicket(tk,false);
   if(tk.devisId&&(S.orders||{})[tk.devisId])put('orders',tk.devisId,{...S.orders[tk.devisId],status:'livre',ticketId:tk.id,paidDate:date,updated:Date.now()});
   if(tk.devisId&&S.devis[tk.devisId])put('devis',tk.devisId,{...S.devis[tk.devisId],paid:true,status:'livre',ticketId:tk.id,paidDate:date});
+  (tk.lotIds||[]).forEach(i=>{if(S.devis[i])put('devis',i,{...S.devis[i],paid:true,status:'livre',ticketId:tk.id,paidDate:date})});
   cart=emptyCart();sel=-1;payPart=false;saveCart();closeModal();showReceipt(tk.id,true)}
 function rcptHead(c){return`${c.logo?`<div class="c"><img src="${c.logo}" alt="" style="max-height:64px;max-width:200px;filter:grayscale(1)"></div>`:''}<div class="c h">${esc(c.shop)}</div><div class="c">${esc(c.tagline)}</div>${c.address?`<div class="c">${esc(c.address)}</div>`:''}${c.phone?`<div class="c">Tél ${esc(c.phone)}</div>`:''}${c.mf?`<div class="c">MF ${esc(c.mf)}</div>`:''}<hr>`}
 function receiptBody(t){const c=cfg();const L=t.clientCode?loyal(t.clientCode):null;
@@ -644,13 +645,13 @@ function newClientCode(phone){const d=String(phone||'').replace(/\D/g,'');if(d.l
 
 /* ================= VUE ATELIER ================= */
 let atQ='';
-V.atelier={build(el){el.innerHTML=`<div class="view"><div class="row"><h1>Atelier</h1><span class="spacer"></span><input class="f" id="atQ" placeholder="Rechercher client, vélo, demande…" style="max-width:320px" value="${esc(atQ)}"><button class="btn primary" data-act="newFiche">+ Nouvelle fiche</button></div>
+V.atelier={build(el){el.innerHTML=`<div class="view"><div class="row"><h1>Atelier</h1><span class="spacer"></span><input class="f" id="atQ" placeholder="Rechercher client, vélo, demande…" style="max-width:320px" value="${esc(atQ)}"><button class="btn" data-act="dgNew">🚲🚲 Plusieurs vélos</button><button class="btn primary" data-act="newFiche">+ Nouvelle fiche</button></div>
   <p class="small muted" style="margin:0">Une fiche = un vélo confié. Le statut place le vélo dans sa zone (Z-STOCK-1 à 3). Un acompte s'encaisse depuis la fiche et sera déduit à la livraison. « Encaisser » envoie les travaux au ticket ; les points fidélité sont crédités au paiement final.</p>
-  <div class="board" id="board"></div></div>`;const i=$('#atQ');i.addEventListener('input',()=>{atQ=i.value;V.atelier.refresh()})},
- refresh(){const b=$('#board');if(!b)return;const q=norm(atQ);const all=Object.values(S.devis).filter(d=>!q||norm([d.clientName,d.bikeBrand,d.bikeType,d.request,d.num,d.clientCode].join(' ')).includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0));
+  <div id="lotStrip"></div><div class="board" id="board"></div></div>`;const i=$('#atQ');i.addEventListener('input',()=>{atQ=i.value;V.atelier.refresh()})},
+ refresh(){const b=$('#board');if(!b)return;lotStrip();const q=norm(atQ);const all=Object.values(S.devis).filter(d=>!q||norm([d.clientName,d.bikeBrand,d.bikeType,d.request,d.num,d.clientCode,d.lotNum].join(' ')).includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0));
   b.innerHTML=ST_KEYS.map(k=>{const items=all.filter(d=>(d.status||'trier')===k);const shown=k==='livre'?items.slice(0,25):items;
    return`<div class="col"><div class="col-h"><b>${ST[k].l}</b><span class="chip">${items.length}</span><span class="spacer"></span><span class="z">${ST[k].z}</span></div><div class="col-b">${shown.map(ficheCard).join('')||'<div class="empty small">Aucun vélo</div>'}${items.length>shown.length?`<div class="small muted" style="text-align:center">+ ${items.length-shown.length} fiches plus anciennes (utilisez la recherche)</div>`:''}</div></div>`}).join('')}};
-function ficheCard(d){const net=devisNet(d);const dep=d.paid?0:depositSum(d.id);return`<button class="card" data-act="editFiche" data-id="${d.id}"><span class="top-l"><span>${esc(d.num||'')}</span><span>${frD(d.date)}</span></span><span class="who">${esc(d.clientName||'Sans client')}${d.bikeBrand||d.bikeType?` · <span class="muted">${esc([d.bikeBrand,d.bikeType].filter(Boolean).join(' '))}</span>`:''}</span>${d.request?`<span class="req">${esc(d.request)}</span>`:''}<span class="bot"><span class="mono small">${(d.lines||[]).length} ligne(s) · ${fmt(net)}</span>${d.paid?'<span class="chip ok">Payé</span>':dep?`<span class="chip acc">Acompte ${fmt(dep)} · reste ${fmt(net-dep)}</span>`:net>0?'<span class="chip warn">À encaisser</span>':''}</span></button>`}
+function ficheCard(d){const net=devisNet(d);const dep=d.paid?0:depositSum(d.id);return`<button class="card" data-act="editFiche" data-id="${d.id}"><span class="top-l"><span>${esc(d.num||'')}${d.lotId?` <span class="chip acc" title="Dépôt de plusieurs vélos">${esc(d.lotNum||'')} · ${d.lotIdx||'?'}/${lotOf(d.lotId).length}</span>`:''}</span><span>${frD(d.date)}</span></span><span class="who">${esc(d.clientName||'Sans client')}${d.bikeBrand||d.bikeType?` · <span class="muted">${esc([d.bikeBrand,d.bikeType].filter(Boolean).join(' '))}</span>`:''}</span>${d.request?`<span class="req">${esc(d.request)}</span>`:''}<span class="bot"><span class="mono small">${(d.lines||[]).length} ligne(s) · ${fmt(net)}</span>${d.paid?'<span class="chip ok">Payé</span>':dep?`<span class="chip acc">Acompte ${fmt(dep)} · reste ${fmt(net-dep)}</span>`:net>0?'<span class="chip warn">À encaisser</span>':''}</span></button>`}
 let fd=null;
 function ficheModal(id){const src=id?S.devis[id]:null;const nextNum='F'+String(Object.keys(S.devis).length+1).padStart(4,'0');
   fd=src?JSON.parse(JSON.stringify(src)):{id:uid('F'),num:nextNum,date:today(),ts:Date.now(),status:'trier',clientCode:'',clientName:'',phone:'',bikeBrand:'',bikeType:'',serial:'',request:'',lines:[],discount:0,paid:false};
@@ -667,6 +668,7 @@ function ficheModal(id){const src=id?S.devis[id]:null;const nextNum='F'+String(O
    <div class="pick"><div class="row" style="flex-wrap:nowrap"><input class="f" id="fAdd" placeholder="Chercher un article ou un service (nom ou code)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="btn" data-act="fBrowse">Catégories</button></div><div class="sugg" id="fSugg" hidden></div></div>
    <div id="fLines"></div>
    <div id="fDep"></div>
+   ${lotFichePanel()}
   </div><div class="sh-f">${src?'<button class="btn danger" data-act="delFiche">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="printDevis">Imprimer le devis</button><button class="btn ok" data-act="waReady" id="waReadyBtn" ${fd.status==='pret'?'':'hidden'}>📲 Prévenir le client</button><button class="btn" data-act="waDevis">📲 Envoyer le devis</button><button class="btn" data-act="invFromFiche">${invoiceOf('devis',fd.id)?'Voir la facture':'Facture'}</button><button class="btn" data-act="saveFiche">Enregistrer</button>${fd.paid?'':'<button class="btn ok" data-act="cashFiche">Encaisser</button>'}</div>`,true);
   $('#fCode').addEventListener('change',()=>{const c=S.clients[U($('#fCode').value)];if(c){$('#fName').value=c.name;$('#fPhone').value=c.phone||'';if(c.bikeBrand&&!$('#fBrand').value)$('#fBrand').value=c.bikeBrand;if(c.bikeType&&!$('#fType').value)$('#fType').value=c.bikeType}renderFL()});
   $('#fAdd').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ficheAddLine()}});
@@ -1406,6 +1408,7 @@ function smsQrModal(n,t){let svg='';try{qrcode.stringToBytes=qrcode.stringToByte
 const TRM_CSS='#trm{--panel-2:var(--panel2);--f-display:var(--display);--f-body:var(--body);--f-mono:var(--mono);--accent-ink:var(--on-accent);--r:8px;font-family:var(--body)}\n#trm h1,#trm h2,#trm h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}\n#trm h1{font-size:28px}\n#trm h2{font-size:22px}\n#trm h3{font-size:17px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}\n#trm .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}\n#trm .spread{justify-content:space-between}\n#trm .stack{display:flex;flex-direction:column;gap:14px}\n#trm .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}\n#trm .grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}\n#trm .grid2>*{min-width:0}\n#trm .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}\n#trm .section{display:flex;flex-direction:column;gap:12px}\n#trm label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:0}\n#trm input,#trm select,#trm textarea{font:400 15px var(--f-body);color:var(--fg);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;min-width:0}\n#trm textarea{min-height:72px;resize:vertical}\n#trm input[type=checkbox],#trm input[type=radio]{width:auto;accent-color:var(--accent)}\n#trm input:focus-visible,#trm select:focus-visible,#trm textarea:focus-visible,#trm button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}\n#trm .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}\n#trm button.btn{font:600 14px var(--f-body);border-radius:6px;padding:9px 14px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg)}\n#trm button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}\n#trm button.btn.ghost{background:none}\n#trm button.btn.danger{color:var(--bad);border-color:var(--bad)}\n#trm button.btn.sm{padding:5px 10px;font-size:13px}\n#trm button.btn:disabled{opacity:.5;cursor:default}\n#trm .muted{color:var(--muted)}\n#trm .small{font-size:13px}\n#trm .pill{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--f-body);letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);color:var(--muted);white-space:nowrap}\n#trm .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}\n#trm .s-reception,#trm .s-diagnostic{color:var(--muted)}\n#trm .s-devis{color:var(--warn);background:var(--warn-soft);border-color:transparent}\n#trm .s-accepte,#trm .s-reparation,#trm .s-tests{color:var(--accent);background:var(--accent-soft);border-color:transparent}\n#trm .s-pret,#trm .s-livre{color:var(--ok);background:var(--ok-soft);border-color:transparent}\n#trm .s-refuse{color:var(--bad);background:var(--bad-soft);border-color:transparent}\n#trm .chip{display:inline-flex;gap:6px;align-items:center;font-size:13px;padding:4px 10px;border-radius:999px;border:1px dashed var(--accent);color:var(--accent);background:none;cursor:pointer;font-family:var(--f-body)}\n#trm .flag{font:600 12px var(--f-body);padding:2px 8px;border-radius:4px;white-space:nowrap}\n#trm .flag.ok{background:var(--ok-soft);color:var(--ok)}\n#trm .flag.bad{background:var(--bad-soft);color:var(--bad)}\n#trm .flag.warn{background:var(--warn-soft);color:var(--warn)}\n#trm .flag.na{background:var(--panel-2);color:var(--muted)}\n#trm .banner{border-radius:var(--r);padding:10px 14px;font-size:14px;background:var(--warn-soft);color:var(--fg);border:1px solid var(--warn)}\n#trm .jobs{display:flex;flex-direction:column;gap:8px}\n#trm .job{display:grid;grid-template-columns:110px 1fr auto auto;gap:14px;align-items:center;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}\n#trm .job:hover{border-color:var(--accent)}\n#trm .job .id{font-family:var(--f-mono);font-size:13px;color:var(--muted)}\n#trm .job .who{min-width:0}\n#trm .job .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n#trm .job .amt{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}\n@media (max-width:640px){#trm .job{grid-template-columns:1fr auto}#trm .job .id{grid-column:1/-1}#trm .job .amt{grid-column:2;grid-row:2}}\n#trm .empty{border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--muted)}\n#trm .steps{display:flex;gap:0;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}\n#trm .steps button{flex:1 0 auto;background:none;border:0;border-right:1px solid var(--line);padding:10px 14px;font:600 14px var(--f-body);color:var(--muted);cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap}\n#trm .steps button:last-child{border-right:0}\n#trm .steps button .n{font-family:var(--f-mono);font-size:12px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:inline-grid;place-items:center}\n#trm .steps button[aria-current="step"]{color:var(--fg);background:var(--accent-soft)}\n#trm .steps button[aria-current="step"] .n{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}\n#trm .tree{display:flex;flex-direction:column;gap:10px}\n#trm .q{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)}\n#trm .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}\n#trm .seg button{border:0;background:var(--panel);padding:6px 12px;font:600 13px var(--f-body);color:var(--muted);cursor:pointer;border-right:1px solid var(--line)}\n#trm .seg button:last-child{border-right:0}\n#trm .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}\n#trm .hint{border-left:3px solid var(--accent);padding:8px 12px;background:var(--accent-soft);border-radius:0 6px 6px 0;font-size:14px}\n#trm .tbl{width:100%;border-collapse:collapse;font-size:14px}\n#trm .tbl th{font:600 12px var(--f-body);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}\n#trm .tbl td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}\n#trm .tbl td.r,#trm .tbl th.r{text-align:right}\n#trm .tbl input{padding:5px 7px;font-size:14px}\n#trm .scroll{overflow-x:auto}\n#trm .meas{display:grid;grid-template-columns:1fr 110px 92px;gap:8px 10px;align-items:center}\n#trm .meas .lbl{min-width:0}\n#trm .meas .lbl small{display:block;color:var(--muted);font-size:12px}\n#trm .fault{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:6px}\n#trm .fault.sug{border-color:var(--warn);background:var(--warn-soft)}\n#trm .totals{display:grid;grid-template-columns:1fr auto;gap:6px 18px;font-size:15px}\n#trm .totals .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}\n#trm .totals .big{font-family:var(--f-display);font-size:24px;font-weight:700}\n#trm .totals hr{grid-column:1/-1;border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}\n#trm .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}\n#trm .kpi div{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px}\n#trm .kpi b{display:block;font-family:var(--f-mono);font-size:18px;font-variant-numeric:tabular-nums}\n#trm .kpi span{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}\n#trm .rate{display:inline-flex;gap:4px}\n#trm .rate button{width:32px;height:32px;border-radius:6px;border:1px solid var(--line);background:var(--panel);font:600 14px var(--f-mono);color:var(--muted);cursor:pointer}\n#trm .rate button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}\n#trm .save-state{font-size:12px;color:var(--muted)}\n@media (prefers-reduced-motion:no-preference){#trm .job,#trm .btn{transition:border-color .15s,background .15s}}\n#trm .tsub{display:flex;gap:6px;flex-wrap:wrap}#trm .tsub button{background:none;border:1px solid var(--line);color:var(--muted);font:600 14px var(--body);padding:7px 12px;border-radius:6px;cursor:pointer}#trm .tsub button[aria-current="page"]{color:var(--fg);background:var(--panel2)}#trm .acts{display:flex;gap:8px;flex-wrap:wrap}';
 const appS=S,appUid=uid,appGo=go;
 (function(){
+const trVae=job=>{try{return kbIsVae(kbModel(job.rec.modelId))}catch(e){return false}};
 const OPS = [
  {id:'diag',label:'Diagnostic complet',min:30,cat:''},
  {id:'controleur',label:'Remplacement du contrôleur',min:60,cat:'Contrôleur'},
@@ -1542,7 +1545,7 @@ function nextHint(job){
   if(d.q1==='non') return 'Contrôlez batterie, fusible et clé : mesurez B+ et le 5 V au contrôleur (section 7.3).';
   if(!d.q2) return 'Question 2 : un code d’erreur est-il affiché ?';
   if(d.q2==='oui') { const ci=codeInfo(job); return ci ? `Code ${ci[1]} (${ci[0]}) : ${ci[2]}. Vérifiez d’abord l’élément concerné, puis confirmez par les mesures.` : 'Choisissez la marque et saisissez le code pour obtenir sa signification.'; }
-  if(!d.q3) return 'Question 3 : le moteur réagit-il à la gâchette ?';
+  if(!d.q3) return 'Question 3 : le moteur réagit-il à la gâchette (ou au pédalage) ?';
   if(d.q3==='non') return 'Testez dans cet ordre : freins débranchés, puis gâchette, puis capteurs Hall (7.4 à 7.6).';
   if(d.q3==='acoups') return 'Testez les capteurs Hall, puis les phases et les MOSFET contrôleur éteint (7.6 et 7.7).';
   return 'Le moteur fonctionne : cherchez la panne signalée par le client (freins, pneus, éclairage…).';
@@ -1587,7 +1590,7 @@ function trClient(job){const r=job.rec;const name=(r.client||'').trim();if(!name
   if(!code){const ph=String(r.tel||'').replace(/\D/g,'');const ex=ph.length>=6&&Object.values(appS.clients).find(c=>String(c.phone||'').replace(/\D/g,'').endsWith(ph.slice(-8)));code=ex?ex.code:newClientCode(r.tel)}
   const ex=appS.clients[code];const c={...(ex||{code,rewardsUsed:0,created:today()}),name:name||(ex&&ex.name)||code,phone:r.tel||(ex&&ex.phone)||''};if(!ex||ex.name!==c.name||ex.phone!==c.phone)put('clients',code,c);
   r.clientCode=code;return code}
-function trLinesForCart(job){return job.devis.lines.map(l=>{if(l.kind==='mo')return{code:'MO',name:'Trottinette · '+l.label+' ('+hm(l.minutes)+')',price:r3((l.minutes||0)/60*(l.rate||0)),qty:1,disc:0,cost:null,cat:'services',type:'service'};
+function trLinesForCart(job){return job.devis.lines.map(l=>{if(l.kind==='mo')return{code:'MO',name:(trVae(job)?'VAE · ':'Trottinette · ')+l.label+' ('+hm(l.minutes)+')',price:r3((l.minutes||0)/60*(l.rate||0)),qty:1,disc:0,cost:null,cat:'services',type:'service'};
   const p=l.code&&appS.products[l.code];return{code:p?p.code:'DIVERS',name:l.label,price:r3(l.pu||0),qty:+l.qty||1,disc:0,cost:p?(p.cost??null):null,cat:p?(p.cat||''):'',type:p?(p.type||'produit'):'produit'}})}
 function trCash(job){if(!job.devis.lines.length)return toast('Le devis est vide');const code=trClient(job);flushJob(job);
   const go2=()=>{cart=emptyCart();cart.lines=trLinesForCart(job);cart.discPct=+num(job.devis.remise)||0;cart.clientCode=code;cart.devisId=job.id;sel=-1;saveCart();if(typeof posSide!=='undefined')posSide='ticket';appGo('vente');toast('Dossier '+job.num+' chargé dans le ticket'+(trDepSum(job)?' · acompte déduit':''))};
@@ -1602,10 +1605,10 @@ function trDepModal(job){const code=trClient(job);flushJob(job);const net=r3(tot
   </div><div class="sh-f"><button class="btn" data-act="close">Annuler</button><button class="btn ok" data-act="trDepOk" style="min-width:160px">Encaisser l'acompte</button></div>`)}
 function trDepOk(){const job=S.jobs.get(modalCtx&&modalCtx.trott)||appS.trott[modalCtx&&modalCtx.trott];if(!job)return toast('Dossier introuvable');const amt=r3(pnum($('#depIn').value));if(!(amt>0))return toast('Indiquez le montant de l\'acompte');
   const d=derive();const date=today();const net=r3(totals(job).ttc);
-  const tk={id:appUid('T'),v:2,device:DEVICE,kind:'acompte',num:d.valid.filter(x=>x.date===date&&(x.device||'')===DEVICE).length+1,date,ts:Date.now(),lines:[{code:'ACOMPTE',name:'Acompte trottinette '+job.num+(job.rec.client?' · '+job.rec.client:''),price:amt,qty:1,disc:0,type:'acompte',cat:''}],sub:amt,discPct:0,discAmt:0,discount:0,total:amt,
+  const tk={id:appUid('T'),v:2,device:DEVICE,kind:'acompte',num:d.valid.filter(x=>x.date===date&&(x.device||'')===DEVICE).length+1,date,ts:Date.now(),lines:[{code:'ACOMPTE',name:'Acompte '+(trVae(job)?'VAE ':'trottinette ')+job.num+(job.rec.client?' · '+job.rec.client:''),price:amt,qty:1,disc:0,type:'acompte',cat:''}],sub:amt,discPct:0,discAmt:0,discount:0,total:amt,
     method:payMethod,received:amt,change:0,clientCode:U(job.rec.clientCode||''),clientName:job.rec.client||'',reward:false,devisId:job.id,devisNet:net,note:''};
   put('tickets',tk.id,tk);closeModal();showReceipt(tk.id,true);setTimeout(render,50)}
-function trWaObj(job){return{clientName:job.rec.client||'',bikeType:'trottinette',id:job.id}}
+function trWaObj(job){return{clientName:job.rec.client||'',bikeType:trVae(job)?'vélo électrique':'trottinette',id:job.id}}
 function trWaDetail(job){const T=totals(job);const out=[];const mo=job.devis.lines.filter(l=>l.kind==='mo'),pc=job.devis.lines.filter(l=>l.kind!=='mo');
   if(mo.length)out.push('Opérations :',...mo.map(l=>`• ${l.label} : ${fmt((l.minutes||0)/60*(l.rate||0))} DT`));
   if(pc.length){if(out.length)out.push('');out.push('Pièces :',...pc.map(l=>`• ${l.label}${+l.qty!==1?' × '+String(l.qty).replace('.',','):''} : ${fmt((l.qty||0)*(l.pu||0))} DT`))}
@@ -1918,6 +1921,210 @@ const KB_T={
 };
 const KB_PSI={xm365:[45,55],xpro:[45,55],g30:[32,37]};
 
+/* ---- VAE (vélos à assistance électrique) : protocoles, tests, codes, fiches ---- */
+Object.assign(KB_P,{
+ vae_vitesse:{t:'Capteur de vitesse et aimant de rayon',min:20,tools:['Tournevis cruciforme','Chiffon','Règle ou pied à coulisse'],steps:[
+  'Faire tourner la roue arrière : la vitesse doit s’afficher à l’écran.',
+  'Nettoyer le capteur et l’aimant (sur un rayon ou sur le disque de frein selon le modèle).',
+  'Aligner l’aimant avec le repère du capteur : il doit passer juste en face.',
+  'Régler la distance aimant ↔ capteur selon le constructeur (Bosch : 8 à 14 mm ; Bafang : 10 à 20 mm ou 1 à 2 mm selon modèle).',
+  'Contrôler le câble du capteur jusqu’au moteur : pincement, coupure, connecteur oxydé.',
+  'Éteindre, retirer la batterie 30 s, remettre, rallumer : le code doit disparaître.',
+  'Si le code revient : remplacer le capteur (ou son câble).']},
+ vae_couple:{t:'Capteur de couple / de pédalage (PAS) et initialisation',min:30,tools:['Clés Allen','Multimètre','Extracteur de manivelle si besoin'],steps:[
+  'Éteindre. Rallumer SANS appuyer sur les pédales (pieds au sol) : le capteur de couple se calibre au démarrage.',
+  'Contrôler que rien ne frotte sur le pédalier ni ne charge la chaîne au démarrage.',
+  'Kit avec capteur PAS (disque à aimants) : vérifier que le disque est complet, bien orienté et proche du capteur sans le toucher.',
+  'Mesurer l’alimentation du capteur (≈ 5 V) et vérifier que le signal change en tournant le pédalier.',
+  'Contrôler le connecteur du capteur (oxydation, broches tordues).',
+  'Si le défaut persiste après calibrage : capteur à remplacer (moteurs de marque : atelier agréé).']},
+ vae_batterie:{t:'Batterie VAE : contacts, support, charge, BMS',min:40,tools:['Multimètre','Gomme abrasive fine ou nettoyant contact','Clé de la batterie'],steps:[
+  'Retirer la batterie (clé). Inspecter les contacts de la batterie et du support : noircis, oxydés, tordus ?',
+  'Nettoyer les contacts à sec (gomme fine) ou au nettoyant contact, laisser sécher.',
+  'Mesurer la tension de la batterie aux bornes (36 V : ≈ 42 V pleine ; 48 V : ≈ 54,6 V).',
+  'Batterie très basse (bien en dessous de 30 V pour une 36 V) : NE PAS charger, l’isoler (risque d’incendie), batterie à remplacer.',
+  'Mesurer le chargeur à vide et vérifier sa LED pendant la charge.',
+  'Remettre la batterie : elle doit se verrouiller sans jeu (un jeu provoque des coupures).',
+  'Batterie de marque (Bosch, Shimano, Yamaha) : diagnostic de capacité avec l’outil du fabricant chez un revendeur agréé.']},
+ vae_ecran:{t:'Écran / commande au guidon',min:30,tools:['Clés Allen','Multimètre','Nettoyant contact'],steps:[
+  'Éteindre, retirer la batterie.',
+  'Débrancher et rebrancher le connecteur de l’écran / de la commande : contacts propres et secs.',
+  'Vérifier que les boutons ne restent pas enfoncés (saleté, humidité).',
+  'Suivre le câble jusqu’au moteur : pincement à la direction, gaine coupée.',
+  'Tester la continuité fil par fil si possible.',
+  'Remplacer le câble ou l’écran (même référence, même protocole de communication).']},
+ vae_moteur_central:{t:'Moteur pédalier : bruit, jeu, roulements',min:60,tools:['Extracteur de manivelles','Clé de plateau (lockring)','Clé dynamométrique','Graisse adaptée'],steps:[
+  'Contrôler le jeu de l’axe (saisir les manivelles et secouer latéralement) et les bruits en pédalant sans assistance puis avec.',
+  'Resserrer les manivelles et le plateau au couple du constructeur : une manivelle desserrée fait souvent « claquer ».',
+  'Contrôler la chaîne, le plateau et la cassette (une transmission usée fait du bruit sous assistance).',
+  'Moteurs Bosch, Shimano, Yamaha, Brose : boîtiers scellés ; si le bruit vient de l’intérieur → diagnostic et échange chez un revendeur agréé.',
+  'Kits Bafang (BBS) : démontage possible, contrôle du pignon nylon primaire et des roulements, regraissage.',
+  'Remonter, serrer au couple, essai en côte.']},
+ vae_moyeu:{t:'Moteur roue : roue libre interne, roulements, entraînement',min:60,tools:['Clés pour l’axe','Extracteur de roue libre / cassette','Multimètre'],steps:[
+  'Éteindre le vélo et retirer la batterie.',
+  'Le moteur tourne mais n’entraîne pas la roue (« patine ») : roue libre ou réducteur interne usé.',
+  'Craquement ou grondement : roulements du moteur.',
+  'Déposer la roue sans tirer sur le câble moteur, ouvrir le moteur si c’est un modèle démontable.',
+  'Remplacer roue libre interne, pignons nylon du réducteur ou roulements selon le défaut.',
+  'Remonter, serrer l’axe avec ses rondelles anti-rotation, essai.']},
+ vae_logiciel:{t:'Logiciel, configuration, appairage',min:30,tools:['Outil de diagnostic du fabricant (Bosch DiagnosticTool, Shimano E-TUBE, etc.)'],steps:[
+  'Noter le code exact et le moment où il apparaît.',
+  'Éteindre, retirer la batterie 30 s, rallumer.',
+  'Vérifier que toutes les pièces sont d’origine et compatibles (batterie, écran, moteur).',
+  'Mise à jour ou reconfiguration : uniquement avec l’outil du fabricant. Sans cet outil : orienter le client vers un revendeur agréé de la marque.']},
+ vae_temp:{t:'Surchauffe moteur ou batterie',min:15,tools:[],steps:[
+  'Arrêter et laisser refroidir (ou tempérer une batterie froide) avant de rallumer.',
+  'Vérifier que rien ne freine la roue (frein qui frotte, pneu sous-gonflé) : le moteur force et chauffe.',
+  'Conseiller au client un mode d’assistance plus bas en côte et de rester sur un petit braquet.',
+  'Si le code revient à froid : capteur de température ou électronique → diagnostic.']},
+ vae_transmission:{t:'Transmission VAE : chaîne, cassette, plateau',min:40,tools:['Contrôleur d’usure de chaîne','Dérive-chaîne','Fouet et démonte-cassette'],steps:[
+  'Mesurer l’usure de la chaîne : elle s’use 2 à 3 fois plus vite sur un VAE.',
+  'Remplacer la chaîne à 0,5 % (11-12 v.) ou 0,75 % (moins de vitesses), avec une chaîne renforcée « e-bike » si possible.',
+  'Contrôler cassette et plateau : dents en aileron de requin = à remplacer.',
+  'Contrôler la patte de dérailleur et régler le dérailleur.',
+  'Conseil au client : changer de vitesse en relâchant un peu l’effort.']}
+});
+Object.assign(KB_T,{
+ vae_vitesse:[{l:'Distance aimant ↔ capteur',how:'Selon le constructeur (Bosch : 8 à 14 mm).',u:'mm',min:1,max:20},{l:'Alignement',how:'L’aimant passe juste devant le repère du capteur.'},{l:'Vitesse affichée',how:'Roue arrière tournée à la main : la vitesse apparaît.'},{l:'Code effacé',how:'Après redémarrage, plus de code de vitesse.'}],
+ vae_couple:[{l:'Démarrage pieds hors des pédales',how:'Le système démarre sans charge sur le pédalier.'},{l:'Alimentation du capteur',how:'Au connecteur du capteur PAS / couple.',u:'V',min:4.75,max:5.25},{l:'Signal en pédalant',how:'Le signal change quand on tourne le pédalier.'},{l:'Assistance au premier tour',how:'L’assistance démarre dès les premiers coups de pédale.'}],
+ vae_batterie:[{l:'Tension de la batterie',how:'Aux bornes, batterie sortie du vélo.',u:'V',rel:'bat'},{l:'Tension du chargeur à vide',how:'Sur la fiche du chargeur.',u:'V',rel:'chg'},{l:'Contacts batterie et support',how:'Propres, non noircis, non tordus.'},{l:'Verrouillage',how:'La batterie est bloquée sans jeu.'}],
+ vae_ecran:[{l:'Connecteur de l’écran',how:'Propre, sec, bien enfoncé.'},{l:'Boutons',how:'Chaque bouton répond, aucun ne reste enfoncé.'},{l:'Câble en tournant le guidon',how:'Aucune coupure de l’écran.'}],
+ vae_moteur_central:[{l:'Jeu de l’axe de pédalier',how:'Manivelles secouées latéralement : aucun jeu.'},{l:'Manivelles et plateau serrés',how:'Au couple du constructeur.'},{l:'Bruit sous assistance',how:'Essai en côte : pas de claquement ni de grincement.'}],
+ vae_moyeu:[{l:'Entraînement',how:'Le moteur entraîne la roue sans patiner.'},{l:'Rotation roue libre',how:'Roue tournée à la main : sans point dur ni grattement.'},{l:'Câble moteur',how:'Libre à la sortie de l’axe, non pincé.'}],
+ vae_logiciel:[{l:'Composants compatibles',how:'Batterie, écran et moteur d’origine ou compatibles.'},{l:'Code effacé',how:'Après redémarrage ou mise à jour.'}],
+ vae_temp:[{l:'Roue libre',how:'Aucun frein ne frotte, pneus bien gonflés.'},{l:'Code à froid',how:'Après refroidissement, le code ne revient pas.'}],
+ vae_transmission:[{l:'Allongement de la chaîne',how:'Au contrôleur d’usure.',u:'%',min:0,max:0.5},{l:'Cassette et plateau',how:'Dents régulières, la chaîne ne saute pas.'},{l:'Passage des vitesses',how:'Tous les rapports passent sous charge.'}]
+});
+/* codes d'erreur des systèmes VAE pour l'arbre de diagnostic : [marque, code, signification, famille] */
+[['Bosch','410','Boutons de la commande bloqués','com'],['Bosch','414','Connexion de l’écran interrompue','com'],['Bosch','418','Boutons bloqués (pression, saleté, humidité)','com'],['Bosch','422','Communication avec le moteur','com'],['Bosch','423','Communication avec la batterie','bms'],['Bosch','430','Pile interne de l’écran vide','com'],['Bosch','440','Erreur interne de l’unité motrice','ctrl'],['Bosch','450','Erreur logicielle interne','logiciel'],
+ ['Bosch','500','Défaut interne du moteur','moteur'],['Bosch','502','Éclairage (court-circuit ou câblage)','com'],['Bosch','503','Capteur de vitesse : pas de signal valide','vitesse'],['Bosch','510','Erreur interne d’un capteur','ctrl'],['Bosch','511','Défaut interne critique du moteur','moteur'],['Bosch','520','Alimentation hors plage','tension'],['Bosch','530','Batterie non reconnue','bms'],['Bosch','531','Configuration des composants','logiciel'],['Bosch','540','Température de l’unité motrice','temp'],['Bosch','550','Consommateur électrique non autorisé (accessoire)','com'],['Bosch','580','Logiciel invalide','logiciel'],['Bosch','591','Authentification refusée','logiciel'],['Bosch','592','Composant incompatible','logiciel'],['Bosch','593','Erreur de configuration','logiciel'],['Bosch','595','Communication entre composants','com'],['Bosch','596','Communication bus CAN','com'],
+ ['Bosch','600','Électronique interne de la batterie','bms'],['Bosch','602','Défaut de charge','bms'],['Bosch','605','Température de la batterie','temp'],['Bosch','610','Tension de la batterie hors limites','tension'],['Bosch','620','Chargeur défectueux','bms'],['Bosch','640','Surveillance de la batterie','bms'],
+ ['Shimano STEPS','W010','Température élevée de l’unité motrice','temp'],['Shimano STEPS','W011','Pas de signal du capteur de vitesse','vitesse'],['Shimano STEPS','W013','Initialisation du capteur (couple) non réussie','couple'],['Shimano STEPS','E010','Anomalie de l’unité motrice','moteur'],['Shimano STEPS','E013','Anomalie du logiciel de l’unité motrice','logiciel'],['Shimano STEPS','E014','Signal de vitesse anormal (capteur mal placé ?)','vitesse'],['Shimano STEPS','E020','Communication batterie ↔ unité motrice','bms'],['Shimano STEPS','E021','Batterie conforme mais non prise en charge','bms'],['Shimano STEPS','E022','Batterie non conforme au système','bms'],['Shimano STEPS','E023','Anomalie électrique de la batterie','bms'],['Shimano STEPS','E024','Protection surintensité batterie','bms'],
+ ['Bafang','04','Gâchette pas revenue au repos','gachette'],['Bafang','05','Défaut de gâchette','gachette'],['Bafang','06','Tension batterie trop basse','tension'],['Bafang','07','Tension batterie trop haute','tension'],['Bafang','08','Capteurs Hall du moteur','hall'],['Bafang','09','Phases du moteur','phase'],['Bafang','10','Température maximale atteinte','temp'],['Bafang','11','Capteur de température du contrôleur','ctrl'],['Bafang','12','Capteur de courant du contrôleur','ctrl'],['Bafang','13','Température de la batterie','temp'],['Bafang','14','Capteur de température du moteur','moteur'],['Bafang','21','Capteur de vitesse','vitesse'],['Bafang','22','Communication batterie (BMS)','bms'],['Bafang','25','Capteur de couple','couple'],['Bafang','26','Signal du capteur de couple','couple'],['Bafang','30','Communication écran ↔ contrôleur','com'],['Bafang','33','Signal de frein','frein'],
+ ['Yamaha','W010','Capteur de couple','couple'],['Yamaha','W011','Capteur de vitesse','vitesse'],['Yamaha','W012','Capteur de cadence','couple'],['Yamaha','W013','Température hors limites','temp'],['Yamaha','E001','Communication batterie','bms'],['Yamaha','E002','Défaut interne de l’unité motrice','moteur'],['Yamaha','E003','Surintensité','ctrl'],['Yamaha','E004','Sous-tension','tension'],['Yamaha','E010','Erreur interne du contrôleur','ctrl'],['Yamaha','E011','Écran','com'],['Yamaha','E012','Logiciel incompatible','logiciel'],['Yamaha','E013','Batterie non reconnue','bms'],['Yamaha','E014','Alimentation','tension'],['Yamaha','E020','Chargeur','bms'],['Yamaha','E030','Température du moteur','temp'],
+ ['KT (kits)','1','Gâchette','gachette'],['KT (kits)','3','Capteurs Hall du moteur','hall'],['KT (kits)','4','Capteur de couple','couple'],['KT (kits)','5','Capteur de vitesse d’axe','vitesse'],['KT (kits)','6','Court-circuit moteur ou contrôleur','mosfet']
+].forEach(c=>CODES.push(c));
+[...new Set(CODES.map(c=>c[0]))].forEach(b=>{if(!BRANDS.includes(b))BRANDS.push(b)});
+const VAE_SRC_GEN=['Codes d’erreur VAE toutes marques (letrigo)','https://letrigo.com/blogs/knowledge/electric-bike-error-codes-list-check-fix'];
+KB_MODELS.push(
+ {id:'bosch',type:'vae',look:'ebike',brand:'VAE · Bosch',name:'Bosch (Active Line, Performance Line, CX)',codeBrand:'Bosch',tension:'36',specs:[['Système','36 V'],['Batteries','PowerPack / PowerTube, 300 à 750 Wh selon modèle'],['Moteurs','Pédalier : Active Line, Performance Line, Performance Line CX (jusqu’à 85 Nm)'],['Écrans','Purion, Intuvia, Kiox, Nyon ; LED Remote (smart system)'],['Diagnostic','Bosch DiagnosticTool : revendeurs agréés']],
+  faults:[
+   {id:'vit',t:'Capteur de vitesse / aimant déréglé',freq:3,codes:['503'],fam:['vitesse'],sym:'Code 503, assistance qui coupe, vitesse à 0 ou fantaisiste.',p:'vae_vitesse',parts:['Capteur']},
+   {id:'chaine',t:'Usure rapide de la transmission',freq:3,codes:[],fam:[],sym:'Chaîne qui saute sous assistance, bruit.',p:'vae_transmission',parts:['Transmission']},
+   {id:'bat',t:'Batterie : contacts, communication, tension',freq:2,codes:['423','600','602','610','640','520'],fam:['bms','tension','alim'],sym:'Codes 423, 6xx ; coupures ; autonomie faible.',p:'vae_batterie',parts:['Batterie']},
+   {id:'ecran',t:'Écran / commande / boutons',freq:2,codes:['410','414','418','430','422','595','596'],fam:['com'],sym:'Codes 410, 414, 418, 430 ; écran qui s’éteint.',p:'vae_ecran',parts:['Afficheur','Câble']},
+   {id:'temp',t:'Surchauffe moteur ou batterie',freq:1,codes:['540','605'],fam:['temp'],sym:'Codes 540, 605 en côte ou forte chaleur.',p:'vae_temp',parts:[]},
+   {id:'moteur',t:'Moteur : défaut interne ou bruit',freq:1,codes:['440','500','510','511'],fam:['moteur','ctrl'],sym:'Codes 440, 500, 511 ; claquement dans le moteur.',p:'vae_moteur_central',parts:['Moteur']},
+   {id:'logi',t:'Logiciel / configuration / pièce non reconnue',freq:1,codes:['450','530','531','580','591','592','593'],fam:['logiciel'],sym:'Après remplacement d’une pièce ou mise à jour.',p:'vae_logiciel',parts:[]},
+   {id:'disque',t:'Freins à disque',freq:2,codes:[],fam:[],sym:'Usure rapide des plaquettes (vélo plus lourd).',p:'frein_disque',parts:['Frein']}],
+  src:[['Codes d’erreur Bosch (Upway)','https://upway.co/blogs/news/bosch-electric-bike-error-codes-complete-list'],['Code 503 Bosch : réglage capteur (Upway)','https://en.upway.be/blogs/news/code-erreur-503-bosch'],VAE_SRC_GEN]},
+ {id:'shimano',type:'vae',look:'ebike',brand:'VAE · Shimano',name:'Shimano STEPS (E5000, E6100, EP8…)',codeBrand:'Shimano STEPS',tension:'36',specs:[['Système','36 V'],['Moteurs','Pédalier : E5000, E6100, E7000, EP8 (jusqu’à 85 Nm)'],['Écrans','SC-E5003, SC-E6100, SC-E7000, EN600…'],['Diagnostic','Shimano E-TUBE (PC ou application)']],
+  faults:[
+   {id:'couple',t:'Initialisation du capteur de couple',freq:3,codes:['W013'],fam:['couple'],sym:'W013 : allumé avec un pied sur la pédale.',p:'vae_couple',parts:[]},
+   {id:'vit',t:'Capteur de vitesse',freq:3,codes:['W011','E014'],fam:['vitesse'],sym:'W011 ou E014 : aimant décalé ou capteur mal placé.',p:'vae_vitesse',parts:['Capteur']},
+   {id:'bat',t:'Batterie : communication / compatibilité',freq:2,codes:['E020','E021','E022','E023','E024'],fam:['bms'],sym:'Codes E020 à E024.',p:'vae_batterie',parts:['Batterie']},
+   {id:'chaine',t:'Usure rapide de la transmission',freq:3,codes:[],fam:[],sym:'Chaîne qui saute, bruit.',p:'vae_transmission',parts:['Transmission']},
+   {id:'temp',t:'Température élevée du moteur',freq:1,codes:['W010'],fam:['temp'],sym:'W010 : assistance réduite.',p:'vae_temp',parts:[]},
+   {id:'moteur',t:'Unité motrice / logiciel',freq:1,codes:['E010','E013'],fam:['moteur','logiciel'],sym:'E010, E013.',p:'vae_logiciel',parts:['Moteur']},
+   {id:'ecran',t:'Écran / câble',freq:1,codes:[],fam:['com'],sym:'Écran qui s’éteint, boutons sans effet.',p:'vae_ecran',parts:['Afficheur','Câble']}],
+  src:[['Codes Shimano STEPS (forum eMTB, d’après Shimano)','https://emtbforums.com/threads/shimano-ebike-motors-error-and-warning-codes-with-solutions.39610'],VAE_SRC_GEN]},
+ {id:'bafang',type:'vae',look:'ebike',brand:'VAE · Bafang',name:'Bafang (kits BBS01/BBS02/BBSHD et moteurs M-series)',codeBrand:'Bafang',tension:'48',specs:[['Système','36, 48 ou 52 V selon kit — lire l’étiquette'],['Moteurs','Pédalier BBS01, BBS02, BBSHD ; M400/M500/M600 ; moteurs roue'],['Écrans','DPC18, C961, C965, 500C, 850C…'],['Note','Kits démontables : pièces détachées disponibles']],
+  faults:[
+   {id:'com',t:'Communication écran ↔ contrôleur',freq:3,codes:['30'],fam:['com'],sym:'Code 30 : câble ou connecteur de l’écran.',p:'vae_ecran',parts:['Afficheur','Câble']},
+   {id:'vit',t:'Capteur de vitesse',freq:3,codes:['21'],fam:['vitesse'],sym:'Code 21 : aimant décalé, câble pincé.',p:'vae_vitesse',parts:['Capteur']},
+   {id:'frein',t:'Capteur de frein',freq:2,codes:['33'],fam:['frein'],sym:'Code 33, assistance coupée.',p:'frein_capteur',parts:['Frein']},
+   {id:'gach',t:'Gâchette',freq:2,codes:['04','05'],fam:['gachette'],sym:'Codes 04, 05.',p:'gachette',parts:['Gâchette']},
+   {id:'moteur',t:'Câble moteur / Hall / phases',freq:2,codes:['08','09'],fam:['hall','phase'],sym:'Codes 08, 09.',p:'cable_moteur',parts:['Câble','Moteur']},
+   {id:'meca',t:'Moteur pédalier bruyant (pignon nylon, roulements)',freq:2,codes:[],fam:['moteur'],sym:'Bruit, assistance qui patine.',p:'vae_moteur_central',parts:['Moteur']},
+   {id:'bat',t:'Tension batterie',freq:2,codes:['06','07','22'],fam:['tension','bms'],sym:'Codes 06, 07, 22.',p:'vae_batterie',parts:['Batterie']},
+   {id:'ctrl',t:'Contrôleur / température',freq:1,codes:['10','11','12','14'],fam:['ctrl','temp'],sym:'Codes 10 à 14.',p:'controleur',parts:['Contrôleur']},
+   {id:'couple',t:'Capteur de couple',freq:1,codes:['25','26'],fam:['couple'],sym:'Codes 25, 26.',p:'vae_couple',parts:[]}],
+  src:[['Codes d’erreur Bafang (Upway)','https://en.upway.be/blogs/news/codes-derreur-bafang'],['Codes d’erreur Bafang (Bike Totaal)','https://www.biketotaal.nl/advies/elektrische-fietsen/foutcodes/bafang']]},
+ {id:'yamaha',type:'vae',look:'ebike',brand:'VAE · Yamaha',name:'Yamaha PW (PW-ST, PW-X…)',codeBrand:'Yamaha',tension:'36',specs:[['Système','36 V'],['Moteurs','Pédalier PW-ST, PW-X, PW-S…'],['Diagnostic','Outil Yamaha chez les revendeurs (pas de logiciel grand public)'],['Note','Codes indicatifs : vérifier avec la documentation du vélo']],
+  faults:[
+   {id:'vit',t:'Capteur de vitesse',freq:3,codes:['W011'],fam:['vitesse'],sym:'W011.',p:'vae_vitesse',parts:['Capteur']},
+   {id:'couple',t:'Capteur de couple / cadence',freq:2,codes:['W010','W012'],fam:['couple'],sym:'W010, W012.',p:'vae_couple',parts:[]},
+   {id:'bat',t:'Batterie',freq:2,codes:['E001','E004','E013','E020'],fam:['bms','tension'],sym:'E001, E004, E013, E020.',p:'vae_batterie',parts:['Batterie']},
+   {id:'temp',t:'Température',freq:1,codes:['W013','E030'],fam:['temp'],sym:'W013, E030.',p:'vae_temp',parts:[]},
+   {id:'moteur',t:'Unité motrice / logiciel',freq:1,codes:['E002','E003','E010','E012','E014'],fam:['moteur','ctrl','logiciel'],sym:'E002, E003, E010, E012, E014.',p:'vae_logiciel',parts:['Moteur']},
+   {id:'chaine',t:'Usure rapide de la transmission',freq:3,codes:[],fam:[],sym:'Chaîne qui saute.',p:'vae_transmission',parts:['Transmission']}],
+  src:[['Codes d’erreur Yamaha (Upway)','https://upway.co/blogs/news/yamaha-electric-bike-error-codes']]},
+ {id:'decathlon',type:'vae',look:'ebike',brand:'VAE · Decathlon',name:'Decathlon (Rockrider E-ST, Riverside 500E, Elops 900/920)',codeBrand:'',tension:'36',specs:[['Batterie','36 V'],['Chargeur','36 V 4 A, prise 4 broches (E-ST 100/500/900, Riverside 500E, Elops 900/920)'],['Moteurs','Moteur roue arrière (E-ST 100/500) ; moteur pédalier Brose (E-ST 900)'],['Note','Pièces et mises à jour : ateliers Decathlon']],
+  faults:[
+   {id:'contacts',t:'Contacts batterie sales ou oxydés',freq:3,codes:[],fam:['alim','bms'],sym:'Autonomie qui chute, coupures.',p:'vae_batterie',parts:['Batterie']},
+   {id:'chaine',t:'Usure rapide de chaîne (2 à 3 fois plus vite)',freq:3,codes:[],fam:[],sym:'Chaîne qui saute, bruit.',p:'vae_transmission',parts:['Transmission']},
+   {id:'moteur',t:'« Erreur moteur » : connecteur oxydé ou capteur',freq:2,codes:[],fam:['moteur','couple'],sym:'Assistance bloquée, message d’erreur moteur.',p:'vae_couple',parts:['Connecteur']},
+   {id:'moyeu',t:'Moteur roue : câble, roulements, entraînement',freq:2,codes:[],fam:['hall','phase','moteur'],sym:'À-coups, bruit, assistance qui patine.',p:'vae_moyeu',parts:['Moteur','Roulement']},
+   {id:'vit',t:'Capteur de vitesse',freq:2,codes:[],fam:['vitesse'],sym:'Assistance qui coupe.',p:'vae_vitesse',parts:['Capteur']},
+   {id:'disque',t:'Freins à disque',freq:2,codes:[],fam:[],sym:'Usure rapide des plaquettes, sifflement.',p:'frein_disque',parts:['Frein']}],
+  src:[['Chargeur 36 V Decathlon : modèles compatibles','https://www.decathlon.ie/p/201735-54663-charger-36v-4a-for-e-st-100-500-900-riverside-500e-and-elops-900-920.html'],['Problèmes Rockrider E-ST 900 (article)','https://www.lanslebourg-montcenis.fr/en/how-to-easily-identify-and-solve-problems-with-the-rockrider-e-st-900/']]},
+ {id:'ktkit',type:'vae',look:'ebike',brand:'VAE · Kits et génériques',name:'Moteur roue générique / kits (contrôleur KT, écrans LCD3, S866…)',codeBrand:'KT (kits)',tension:'36',specs:[['Batterie','36 ou 48 V — lire l’étiquette'],['Moteur','Moteur roue avant ou arrière (réducteur ou direct)'],['Contrôleur','KT (Kunteng) ou autre, souvent dans un boîtier ou sous le porte-bagage'],['Écrans','KT LCD3, LCD8, S866…']],
+  faults:[
+   {id:'pas',t:'Capteur de pédalage (PAS)',freq:3,codes:[],fam:['couple'],sym:'Pas d’assistance en pédalant, gâchette OK.',p:'vae_couple',parts:['Capteur']},
+   {id:'cable',t:'Câble moteur / Hall',freq:3,codes:['3'],fam:['hall','phase'],sym:'Code 3, à-coups, moteur qui broute.',p:'cable_moteur',parts:['Câble','Moteur']},
+   {id:'frein',t:'Capteurs de frein (coupure)',freq:2,codes:[],fam:['frein'],sym:'Assistance coupée en permanence.',p:'frein_capteur',parts:['Frein']},
+   {id:'gach',t:'Gâchette',freq:2,codes:['1'],fam:['gachette'],sym:'Code 1.',p:'gachette',parts:['Gâchette']},
+   {id:'ctrl',t:'Contrôleur (court-circuit)',freq:2,codes:['6'],fam:['mosfet','ctrl'],sym:'Code 6, roue dure contrôleur éteint.',p:'controleur',parts:['Contrôleur']},
+   {id:'moyeu',t:'Moteur roue qui patine / bruyant',freq:2,codes:[],fam:['moteur'],sym:'Le moteur tourne sans entraîner, grondement.',p:'vae_moyeu',parts:['Moteur','Roulement']},
+   {id:'bat',t:'Batterie / chargeur',freq:2,codes:[],fam:['alim','batterie'],sym:'Ne s’allume plus, autonomie faible.',p:'vae_batterie',parts:['Batterie']}],
+  src:[VAE_SRC_GEN]}
+);
+Object.assign(FAMILY_FAULT,{vitesse:'vitesse',couple:'couple'});
+KB_MODELS.filter(m=>m.type==='vae').forEach(m=>m.faults.forEach(f=>{f.fam=[...new Set((f.fam||[]).map(x=>FAMILY_FAULT[x]||x))]}));
+/* ---- vues éclatées (schémas de principe, dessins génériques) ---- */
+/* k : cyl (cylindre), gear (engrenage), ring (roulement / bague), shaft (axe), box (boîtier) ; w = épaisseur, d = diamètre ; s : 1 = l'atelier peut intervenir, 0 = atelier agréé */
+const KB_EXPL={
+ mid:{t:'Moteur pédalier de marque (Bosch, Shimano, Yamaha, Brose)',note:'Boîtier scellé : les pièces 1 à 8 ne s’ouvrent pas à l’atelier (garantie, outils et pièces réservés aux revendeurs agréés). Vous intervenez sur les manivelles, le plateau, le capteur de vitesse, les câbles et les contacts.',parts:[
+  {n:1,l:'Carter gauche',k:'cyl',w:16,d:150,s:0,r:'Protège le moteur. Fissure après une chute = entrée d’eau.'},
+  {n:2,l:'Roulement d’axe gauche',k:'ring',w:10,d:58,s:0,r:'Jeu ou craquement dans le pédalier.'},
+  {n:3,l:'Axe de pédalier + capteur de couple',k:'shaft',w:150,d:22,s:0,r:'Mesure la force sur les pédales. Calibré au démarrage : allumer sans appuyer sur les pédales.'},
+  {n:4,l:'Moteur (stator + rotor)',k:'cyl',w:44,d:120,s:0,r:'Codes « moteur » (Bosch 500/511, Shimano E010).'},
+  {n:5,l:'Réducteur (engrenages)',k:'gear',w:22,d:104,s:0,r:'Bruit de « moulin » sous assistance.'},
+  {n:6,l:'Embrayage / roue libre interne',k:'ring',w:14,d:66,s:0,r:'Pédalage qui patine ou résistance moteur éteint.'},
+  {n:7,l:'Carte électronique (contrôleur)',k:'box',w:30,d:96,s:0,r:'Communication, température, logiciel (codes 4xx, 5xx, E013).'},
+  {n:8,l:'Carter droit',k:'cyl',w:16,d:150,s:0,r:'Joint d’étanchéité côté plateau.'},
+  {n:9,l:'Araignée + plateau',k:'gear',w:8,d:170,s:1,r:'Dents usées, voilé, serrage du lockring.'},
+  {n:10,l:'Manivelles (vis au couple)',k:'box',w:12,d:40,s:1,r:'Une manivelle desserrée fait « claquer » à chaque tour.'}]},
+ bbs:{t:'Moteur pédalier en kit Bafang (BBS01, BBS02, BBSHD)',note:'Moteur démontable : pignon nylon, roulements, contrôleur et capteur se remplacent à l’atelier. Débrancher la batterie avant d’ouvrir.',parts:[
+  {n:1,l:'Écrou de fixation + contre-écrou',k:'ring',w:10,d:74,s:1,r:'Desserré : le moteur tourne dans le boîtier de pédalier.'},
+  {n:2,l:'Plaque de fixation',k:'cyl',w:6,d:86,s:1,r:'Tient le moteur contre le cadre.'},
+  {n:3,l:'Axe + capteur de pédalage (PAS)',k:'shaft',w:150,d:20,s:1,r:'Pas d’assistance en pédalant ; code 25/26 (couple).'},
+  {n:4,l:'Carter moteur + contrôleur intégré',k:'box',w:40,d:120,s:1,r:'Codes 10 à 12 ; MOSFET grillés si surcharge.'},
+  {n:5,l:'Moteur (stator + rotor, capteurs Hall)',k:'cyl',w:40,d:100,s:1,r:'Codes 08 (Hall) et 09 (phases).'},
+  {n:6,l:'Pignon primaire en nylon',k:'gear',w:14,d:90,s:1,r:'LA pièce d’usure : bruit de grincement, assistance qui patine.'},
+  {n:7,l:'Roulements',k:'ring',w:10,d:50,s:1,r:'Grondement, jeu.'},
+  {n:8,l:'Réducteur secondaire + roue libre',k:'gear',w:18,d:76,s:1,r:'Patine en charge, cliquetis.'},
+  {n:9,l:'Couvercle du réducteur (graisse)',k:'cyl',w:12,d:110,s:1,r:'Regraisser à chaque ouverture.'},
+  {n:10,l:'Adaptateur + plateau',k:'gear',w:8,d:150,s:1,r:'Ligne de chaîne, dents usées.'},
+  {n:11,l:'Lockring du plateau',k:'ring',w:8,d:46,s:1,r:'Desserré : plateau qui bouge.'}]},
+ hub:{t:'Moteur roue avec réducteur (VAE moteur roue, kits)',note:'Démontable sur la plupart des moteurs génériques. Ne jamais tirer sur le câble à la sortie de l’axe.',parts:[
+  {n:1,l:'Flasque côté disque + roulement',k:'cyl',w:12,d:160,s:1,r:'Roulement : grondement, jeu de la roue.'},
+  {n:2,l:'Réducteur planétaire (3 pignons nylon)',k:'gear',w:20,d:96,s:1,r:'Bruit fort, dents arrachées : le moteur tourne sans entraîner.'},
+  {n:3,l:'Embrayage / roue libre interne',k:'ring',w:14,d:70,s:1,r:'Patine au démarrage ou en côte.'},
+  {n:4,l:'Cloche (rotor à aimants)',k:'ring',w:40,d:150,s:1,r:'Aimant décollé = frottement, blocage.'},
+  {n:5,l:'Stator bobiné + capteurs Hall',k:'cyl',w:36,d:110,s:1,r:'Bobinage brûlé (odeur), Hall HS : à-coups, code Hall.'},
+  {n:6,l:'Axe creux + rondelles anti-rotation',k:'shaft',w:150,d:16,s:1,r:'Axe qui tourne dans la patte = câble arraché.'},
+  {n:7,l:'Roulement côté cassette',k:'ring',w:10,d:44,s:1,r:'Grondement.'},
+  {n:8,l:'Flasque côté cassette / roue libre',k:'cyl',w:12,d:160,s:1,r:'Roue libre de cassette usée : la roue patine en pédalant.'},
+  {n:9,l:'Câble moteur (3 phases + 5 fils Hall)',k:'box',w:10,d:30,s:1,r:'Pincé ou coupé à la sortie de l’axe : codes Hall, à-coups.'}]}
+};
+KB_MODELS.forEach(m=>{if(['bosch','shimano','yamaha'].includes(m.id))m.expl=['mid'];if(m.id==='bafang')m.expl=['bbs','hub'];if(m.id==='decathlon')m.expl=['hub','mid'];if(m.id==='ktkit')m.expl=['hub']});
+function kbExplSvg(E){const cy=130;let x=24;const out=[];const gap=16;const sc=1;
+  E.parts.forEach((p,i)=>{const d=p.d*sc,w=p.w,rx=Math.max(4,d*0.16),top=cy-d/2;const col=p.s?'var(--ok)':'currentColor';let g='';
+   if(p.k==='shaft'){g=`<rect x="${x}" y="${cy-d/2}" width="${w}" height="${d}" rx="4" fill="var(--panel2)" stroke-width="2"/><ellipse cx="${x+w}" cy="${cy}" rx="${d*0.2}" ry="${d/2}" stroke-width="2" fill="var(--panel2)"/><path d="M${x+w*0.55} ${cy-d/2} v${d}" stroke-width="1.5" stroke-dasharray="3 3"/>`}
+   else if(p.k==='box'){g=`<rect x="${x}" y="${top}" width="${w}" height="${d}" rx="4" fill="var(--panel2)" stroke-width="2"/>${[0.25,0.5,0.75].map(f=>`<path d="M${x+4} ${top+d*f} h${w-8}" stroke-width="1.5"/>`).join('')}`}
+   else{const bodyW=Math.max(0,w-rx);g=`<path d="M${x} ${top} h${bodyW} M${x} ${top+d} h${bodyW}" stroke-width="2"/><ellipse cx="${x+bodyW}" cy="${cy}" rx="${rx}" ry="${d/2}" stroke-width="2" fill="var(--panel2)" ${p.k==='gear'?'stroke-dasharray="3 2"':''}/><ellipse cx="${x}" cy="${cy}" rx="${rx}" ry="${d/2}" stroke-width="2" fill="var(--panel)" ${p.k==='gear'?'stroke-dasharray="3 2"':''}/>${p.k==='ring'||p.k==='gear'?`<ellipse cx="${x}" cy="${cy}" rx="${rx*0.45}" ry="${d*0.22}" stroke-width="2"/>`:''}`;x+=rx}
+   const cx=x+(p.k==='shaft'||p.k==='box'?w/2:Math.max(0,w-rx)/2);const ly=i%2?236:24;
+   out.push(`<g style="color:${col}">${g}<path d="M${cx} ${i%2?top+d+4:top-4} L${cx} ${i%2?ly-11:ly+11}" stroke-width="1" stroke-dasharray="2 2"/><circle cx="${cx}" cy="${ly}" r="11" fill="var(--panel)" stroke-width="2"/><text x="${cx}" y="${ly+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" stroke="none" font-family="var(--mono)">${p.n}</text></g>`);
+   x+=(p.k==='shaft'?w*0.35:p.k==='box'?w:Math.max(0,w-rx))+gap+(p.k==='shaft'?0:0)});
+  const W=x+20;
+  return`<svg viewBox="0 0 ${W} 260" role="img" aria-label="Vue éclatée : ${esc(E.t)}" style="width:100%;min-width:520px;height:auto;max-height:360px;color:var(--muted)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 ${cy} H${W-8}" stroke-width="1" stroke-dasharray="10 4 2 4"/>${out.join('')}</svg>`}
+function kbExplHTML(m){const L=(m.expl||[]).map(k=>KB_EXPL[k]).filter(Boolean);if(!L.length)return'';
+  return`<section class="panel section"><h3>Vue éclatée du moteur</h3><p class="small muted" style="margin:0">Schéma de principe (dessin générique, pas un plan constructeur). <span style="color:var(--ok);font-weight:600">En vert</span> : pièces sur lesquelles l’atelier peut intervenir.</p>
+   ${L.map(E=>`<div class="stack" style="gap:8px;border:1px solid var(--line);border-radius:6px;padding:12px"><b>${esc(E.t)}</b><div style="overflow-x:auto;background:var(--panel2);border-radius:6px;padding:4px">${kbExplSvg(E)}</div>
+    <table class="tbl"><thead><tr><th style="width:36px">N°</th><th>Pièce</th><th>Pannes / à surveiller</th><th>Qui intervient</th></tr></thead><tbody>${E.parts.map(p=>`<tr><td class="num"><b>${p.n}</b></td><td><b>${esc(p.l)}</b></td><td class="small">${esc(p.r)}</td><td>${p.s?'<span class="flag ok">Atelier</span>':'<span class="flag na">Agréé marque</span>'}</td></tr>`).join('')}</tbody></table>
+    <p class="small muted" style="margin:0">${esc(E.note)}</p></div>`).join('')}</section>`}
+
 /* ---- Fiches techniques : outils ---- */
 const FREQ_L={3:'Très courant',2:'Courant',1:'Occasionnel'};
 const kbSet=()=>{S.settings.kb=S.settings.kb||{};const k=S.settings.kb;k.notes=k.notes||{};k.extra=k.extra||{};k.models=k.models||[];return k};
@@ -1930,14 +2137,15 @@ const kbCode=c=>String(c||'').trim().toUpperCase().replace(/^E-?/,'').replace(/^
 function kbRank(job){const m=kbModel(job.rec.modelId);if(!m)return[];const d=job.diag;const sug=suggested(job);const code=d.q2==='oui'&&d.code?kbCode(d.code):'';
   return kbFaults(m).map(f=>{let s=+f.freq||1,why=[];if(code&&(f.codes||[]).some(c=>kbCode(c)===code)){s+=10;why.push('code '+d.code)}
     const fm=(f.fam||[]).filter(x=>sug.has(x));if(fm.length){s+=5;why.push('vos réponses / mesures')}return{f,s,why}}).sort((a,b)=>b.s-a.s)}
-function kbModelOptions(sel){return`<option value="">— Choisir le modèle —</option>${[...new Set(kbModels().map(m=>m.brand))].map(b=>`<optgroup label="${esc(b)}">${kbModels().filter(m=>m.brand===b).map(m=>`<option value="${esc(m.id)}" ${sel===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</optgroup>`).join('')}`}
-function kbSelectModel(job,id){const m=kbModel(id);job.rec.modelId=id;if(m){if(!job.rec.marque)job.rec.marque=m.brand==='Autre'?'':m.brand.split(' / ')[0];if(!job.rec.modele)job.rec.modele=m.name.replace(/^(Xiaomi|Ninebot|Kugoo)\s+/,'');if(m.tension)job.rec.tension=m.tension;if(!job.diag.brand&&m.codeBrand)job.diag.brand=m.codeBrand}saveJobSoon(job);render()}
+const kbIsVae=m=>!!m&&(m.type==='vae'||/^VAE/.test(m.brand||''));
+function kbModelOptions(sel){return`<option value="">— Choisir le modèle —</option>${[...new Set(kbModels().map(m=>m.brand))].sort((x,y)=>(/^VAE/.test(x)?1:0)-(/^VAE/.test(y)?1:0)).map(b=>`<optgroup label="${esc(/^VAE/.test(b)?b:'Trottinette · '+b)}">${kbModels().filter(m=>m.brand===b).map(m=>`<option value="${esc(m.id)}" ${sel===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</optgroup>`).join('')}`}
+function kbSelectModel(job,id){const m=kbModel(id);job.rec.modelId=id;if(m){if(!job.rec.marque)job.rec.marque=m.brand==='Autre'?'':m.brand.replace(/^VAE · /,'').split(' / ')[0];if(!job.rec.modele)job.rec.modele=m.name.replace(/^(Xiaomi|Ninebot|Kugoo)\s+/,'');if(m.tension)job.rec.tension=m.tension;if(!job.diag.brand&&m.codeBrand)job.diag.brand=m.codeBrand}saveJobSoon(job);render()}
 function kbProtoHTML(f,opt={}){const P=kbProto(f);
   return`<div class="stack" style="gap:8px"><div class="small"><b>${esc(P.t)}</b> · temps indicatif ${hm(P.min)}${(f.parts||[]).length?` · pièces : ${esc(f.parts.join(', '))}`:''}</div>
    ${P.tools.length?`<div class="small"><span class="muted">Outils :</span> ${P.tools.map(esc).join(' · ')}</div>`:''}
    <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px">${P.steps.map((s,i)=>`<li>${opt.check?`<label class="row" style="gap:8px;align-items:flex-start"><input type="checkbox" data-f="rep.proto.${f.id}.${i}" ${getP(opt.job,'rep.proto.'+f.id+'.'+i)?'checked':''}> <span>${esc(s)}</span></label>`:esc(s)}</li>`).join('')}</ol></div>`}
 function kbDiagRender(job){const el=$('#kbDiag');if(!el)return;const m=kbModel(job.rec.modelId);
-  if(!m){el.innerHTML=`<div class="row spread"><h3>Pannes connues du modèle</h3></div><div class="row"><label class="f" style="flex:1 1 280px">Modèle de la trottinette<select id="kbModelSel">${kbModelOptions('')}</select></label></div><p class="small muted" style="margin:0">Choisissez le modèle : l’application classera ses pannes courantes selon le code d’erreur, vos réponses et vos mesures.</p>`;return}
+  if(!m){el.innerHTML=`<div class="row spread"><h3>Pannes connues du modèle</h3></div><div class="row"><label class="f" style="flex:1 1 280px">Modèle (trottinette ou VAE)<select id="kbModelSel">${kbModelOptions('')}</select></label></div><p class="small muted" style="margin:0">Choisissez le modèle : l’application classera ses pannes courantes selon le code d’erreur, vos réponses et vos mesures.</p>`;return}
   const R=kbRank(job);const added=new Set(job.kb||[]);
   el.innerHTML=`<div class="row spread"><span class="row" style="gap:10px"><span style="width:84px;display:block">${kbPic(m,56)}</span><h3>Pannes connues · ${esc(m.name)}</h3></span><button class="btn sm" data-kbopen="${esc(m.id)}">Fiche technique</button></div>
   <div class="stack" style="gap:6px">${R.map(({f,s,why},i)=>`${i===4&&R.length>4?`<details><summary class="small" style="cursor:pointer;margin:4px 0">Voir les ${R.length-4} autres pannes de ce modèle</summary><div class="stack" style="gap:6px;margin-top:6px">`:''}<div class="fault ${s>=5?'sug':''}" style="flex-direction:column;gap:6px"><div class="row spread" style="width:100%"><span><b>${esc(f.t)}</b> ${s>=5?'<span class="flag warn">Probable</span>':''} <span class="flag na">${FREQ_L[f.freq]||''}</span>${(f.codes||[]).length?` <span class="small muted">codes ${esc(f.codes.join(', '))}</span>`:''}</span>
@@ -1955,16 +2163,18 @@ function kbRepHTML(job){const m=kbModel(job.rec.modelId);const fs=(job.kb||[]).m
 function renderFiches(){const k=kbSet();const m=view.kbModel&&kbModel(view.kbModel);
   if(!m)return`<div class="stack"><div class="row spread"><h1>Fiches techniques</h1><button class="btn" id="kbNewModel">+ Ajouter un modèle</button></div>
    <p class="small muted" style="margin:0">Pannes courantes et protocoles de réparation par modèle. Choisissez le modèle à la réception d’un dossier : le diagnostic propose alors les pannes probables.</p>
-   <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">${kbModels().map(x=>`<button class="job" style="grid-template-columns:110px 1fr" data-kbopen="${esc(x.id)}">${kbPic(x,64)}<span class="who"><b style="white-space:normal">${esc(x.name)}</b><span class="muted small">${esc(x.brand)} · ${esc(x.tension||'?')} V · ${kbFaults(x).length} pannes</span></span></button>`).join('')}</div>
+   <div class="tsub" role="tablist">${[['','Tout'],['trott','🛴 Trottinettes'],['vae','🚲 Vélos électriques (VAE)']].map(([k,l])=>`<button data-kbtype="${k}" aria-current="${(view.kbType||'')===k?'page':'false'}">${l}</button>`).join('')}</div>
+   <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">${kbModels().filter(x=>!view.kbType||(view.kbType==='vae')===kbIsVae(x)).map(x=>`<button class="job" style="grid-template-columns:110px 1fr" data-kbopen="${esc(x.id)}">${kbPic(x,64)}<span class="who"><b style="white-space:normal">${esc(x.name)}</b><span class="muted small">${esc(x.brand)} · ${esc(x.tension||'?')} V · ${kbFaults(x).length} pannes</span></span></button>`).join('')}</div>
    <div id="kbNewBox"></div></div>`;
   const isCustom=!KB_MODELS.some(x=>x.id===m.id);
   return`<div class="stack"><div class="row"><button class="btn ghost sm" data-kbopen="">← Fiches</button><h1>${esc(m.name)}</h1></div>
    <div class="grid2"><section class="panel section"><div class="row spread"><h3>Photo</h3><span class="row" style="gap:6px"><label class="btn sm" style="cursor:pointer">📷 ${kbPhoto(m.id)?'Changer la photo':'Ajouter ma photo'}<input type="file" accept="image/*" id="kbPhotoIn" hidden></label>${kbPhoto(m.id)?'<button class="btn sm ghost" id="kbPhotoDel">Retirer</button>':''}</span></div>
-     ${kbPic(m,220)}${kbPhoto(m.id)?'':'<p class="small muted" style="margin:0">Dessin indicatif. Prenez en photo une trottinette de ce modèle à l’atelier pour la reconnaître d’un coup d’œil.</p>'}
+     ${kbPic(m,220)}${kbPhoto(m.id)?'':'<p class="small muted" style="margin:0">Dessin indicatif. Prenez en photo un véhicule de ce modèle à l’atelier pour la reconnaître d’un coup d’œil.</p>'}
      <h3>Caractéristiques</h3><table class="tbl"><tbody>${(m.specs||[]).map(([a,b])=>`<tr><th style="width:35%">${esc(a)}</th><td>${esc(b)}</td></tr>`).join('')||'<tr><td class="muted">—</td></tr>'}</tbody></table>
      <p class="small muted" style="margin:0">Valeurs indicatives : vérifiez l’étiquette de la batterie et la version exacte du modèle.</p></section>
     <section class="panel section"><h3>Mes notes atelier</h3><textarea data-kbnote="${esc(m.id)}" placeholder="Références de pièces, fournisseurs, astuces…" style="min-height:110px">${esc(k.notes[m.id]||'')}</textarea>
      ${(m.src||[]).length?`<h3>Documents et sources</h3><ul style="margin:0;padding-left:18px">${m.src.map(([t,u])=>`<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')}</ul>`:''}</section></div>
+   ${typeof kbExplHTML==='function'?kbExplHTML(m):''}
    <section class="panel section"><h3>Pannes courantes et protocoles</h3>
     ${kbFaults(m).map(f=>`<details style="border:1px solid var(--line);border-radius:6px;padding:10px 12px"><summary style="cursor:pointer"><b>${esc(f.t)}</b> <span class="flag na">${FREQ_L[f.freq]||'Ma panne'}</span>${(f.codes||[]).length?` <span class="small muted">codes ${esc(f.codes.join(', '))}</span>`:''}</summary>
      <div style="margin-top:10px" class="stack">${f.sym?`<p class="small muted" style="margin:0">${esc(f.sym)}</p>`:''}${kbProtoHTML(f)}${kbTestsTable(f,{tension:m.tension,modelId:m.id})}${f.custom?`<div><button class="btn sm danger" data-kbdelf="${esc(f.id)}">Supprimer cette panne</button></div>`:''}</div></details>`).join('')}
@@ -1979,13 +2189,14 @@ function kbBind(app){
  app.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const job=view.page==='job'?curJob():null;
   if(b.dataset.kbadd!=null&&job){kbAdd(job,b.dataset.kbadd);return}
   if(b.dataset.kbview!=null){kbView(job,b.dataset.kbview);return}
+  if(b.dataset.kbtype!=null){view.kbType=b.dataset.kbtype;render();return}
   if(b.dataset.kbopen!=null){go({page:'fiches',kbModel:b.dataset.kbopen||null});return}
   if(b.dataset.kbdelf){const k=kbSet();k.extra[view.kbModel]=(k.extra[view.kbModel]||[]).filter(f=>f.id!==b.dataset.kbdelf);saveSettingsSoon();render();toast('Panne supprimée');return}
   if(b.id==='kbAddF'){const t=$('#kbFt').value.trim();const steps=$('#kbFp').value.split(/\n/).map(x=>x.trim()).filter(Boolean);if(!t||!steps.length)return toast('Indiquez la panne et au moins une étape');
    const k=kbSet();(k.extra[view.kbModel]=k.extra[view.kbModel]||[]).push({id:'u'+uid(),custom:true,t,freq:2,codes:$('#kbFc').value.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean),fam:[],sym:$('#kbFs').value.trim(),min:Math.round(num($('#kbFm').value)||30),steps,parts:[],tests:$('#kbFt2').value.split(/\n/).map(x=>x.split(';').map(y=>y.trim())).filter(x=>x[0]).map(x=>{const t={l:x[0],how:''};if(x[1]!==undefined&&num(x[1])!=null&&num(x[2])!=null){t.min=num(x[1]);t.max=num(x[2]);t.u=x[3]||''}return t})});saveSettingsSoon();render();toast('Panne ajoutée à la fiche');return}
-  if(b.id==='kbNewModel'){$('#kbNewBox').innerHTML=`<section class="panel section"><h3>Nouveau modèle</h3><div class="grid"><label class="f">Nom du modèle<input id="kbMn" placeholder="Ex. iScooter i9"></label><label class="f">Marque<input id="kbMb"></label><label class="f">Tension (V)<input id="kbMv" inputmode="numeric" value="36"></label></div><label class="f">Caractéristiques (une par ligne, « Nom : valeur »)<textarea id="kbMs" placeholder="Batterie : 36 V 7,5 Ah&#10;Moteur : 350 W&#10;Pneus : 8,5&quot;"></textarea></label><div><button class="btn primary" id="kbSaveModel">Créer la fiche</button></div></section>`;return}
+  if(b.id==='kbNewModel'){$('#kbNewBox').innerHTML=`<section class="panel section"><h3>Nouveau modèle</h3><div class="grid"><label class="f">Nom du modèle<input id="kbMn" placeholder="Ex. iScooter i9"></label><label class="f">Marque<input id="kbMb"></label><label class="f">Tension (V)<input id="kbMv" inputmode="numeric" value="36"></label><label class="f">Type<select id="kbMt"><option value="trott">Trottinette</option><option value="vae">Vélo électrique (VAE)</option></select></label></div><label class="f">Caractéristiques (une par ligne, « Nom : valeur »)<textarea id="kbMs" placeholder="Batterie : 36 V 7,5 Ah&#10;Moteur : 350 W&#10;Pneus : 8,5&quot;"></textarea></label><div><button class="btn primary" id="kbSaveModel">Créer la fiche</button></div></section>`;return}
   if(b.id==='kbSaveModel'){const n=$('#kbMn').value.trim();if(!n)return toast('Indiquez le nom du modèle');const k=kbSet();const id='m'+uid();
-   k.models.push({id,brand:$('#kbMb').value.trim()||'Autre',name:n,codeBrand:'',tension:$('#kbMv').value.trim(),specs:$('#kbMs').value.split(/\n/).map(x=>x.split(/\s*:\s*/)).filter(x=>x[0]&&x[0].trim()).map(x=>[x[0].trim(),x.slice(1).join(':').trim()]),faults:[],src:[]});saveSettingsSoon();go({page:'fiches',kbModel:id});toast('Fiche créée : ajoutez ses pannes');return}
+   k.models.push({id,type:$('#kbMt').value,look:$('#kbMt').value==='vae'?'ebike':'',brand:$('#kbMb').value.trim()||'Autre',name:n,codeBrand:'',tension:$('#kbMv').value.trim(),specs:$('#kbMs').value.split(/\n/).map(x=>x.split(/\s*:\s*/)).filter(x=>x[0]&&x[0].trim()).map(x=>[x[0].trim(),x.slice(1).join(':').trim()]),faults:[],src:[]});saveSettingsSoon();go({page:'fiches',kbModel:id});toast('Fiche créée : ajoutez ses pannes');return}
   if(b.id==='kbPhotoDel'){ask('Retirer la photo de ce modèle ?','Retirer',()=>{del('kbphotos',view.kbModel);render()});return}
   if(b.id==='kbDelModel'){ask('Supprimer ce modèle et ses pannes ?','Supprimer',()=>{const k=kbSet();k.models=k.models.filter(x=>x.id!==view.kbModel);delete k.extra[view.kbModel];saveSettingsSoon();go({page:'fiches',kbModel:null})});return}
  });
@@ -1994,7 +2205,13 @@ function kbBind(app){
 }
 /* ---- illustration de profil (dessin générique) + photo de l'atelier ---- */
 const KB_LOOK={xm365:'city',xpro:'city',x4:'big',g30:'big',f40:'big',es2:'small',kugoo:'seat',puissante:'power'};
-function kbSvg(look){const L=look||'city';const big=L==='big'||L==='power'||L==='seat';const r=big?22:19,rs=L==='small'?16:r;
+function kbSvg(look){if(look==='ebike')return`<svg viewBox="0 0 280 150" role="img" aria-label="Silhouette de vélo électrique" style="height:100%;width:auto;max-width:100%;color:var(--muted)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+   <circle cx="62" cy="104" r="40" stroke-width="5"/><circle cx="218" cy="104" r="40" stroke-width="5"/><circle cx="62" cy="104" r="4" fill="currentColor"/><circle cx="218" cy="104" r="4" fill="currentColor"/>
+   <path d="M62 104 L118 104 L104 52 Z" stroke-width="5"/><path d="M118 104 L192 54 L104 52" stroke-width="6"/><path d="M192 54 L218 104" stroke-width="5"/><path d="M188 40 L192 54" stroke-width="5"/><path d="M178 34 L204 30" stroke-width="5"/>
+   <path d="M104 52 L100 38" stroke-width="5"/><path d="M86 36 L114 36" stroke-width="7"/>
+   <rect x="126" y="62" width="44" height="14" rx="5" transform="rotate(-34 148 69)" fill="currentColor" stroke="none" opacity=".55"/>
+   <circle cx="118" cy="104" r="12" stroke-width="4"/><path d="M118 104 l10 14" stroke-width="4"/>
+  </svg>`;const L=look||'city';const big=L==='big'||L==='power'||L==='seat';const r=big?22:19,rs=L==='small'?16:r;
   const fx=40,bx=230,y=96;const deckY=y-(L==='power'?16:10);
   const stem=L==='power'?`<path d="M${fx} ${y} L${fx+26} 22" stroke-width="7"/>`:`<path d="M${fx} ${y} L${fx+22} 20" stroke-width="6"/>`;
   return`<svg viewBox="0 0 280 130" role="img" aria-label="Silhouette de trottinette" style="height:100%;width:auto;max-width:100%;color:var(--muted)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -2057,7 +2274,7 @@ function renderJobs(){
       <span class="who"><b>${esc(j.rec?.client||'Client sans nom')}</b><span class="muted small">${esc([j.rec?.marque,j.rec?.modele].filter(Boolean).join(' ')||'Trottinette')} · ${esc(j.rec?.tension||'')} V</span></span>
       <span class="pill s-${j.status}">${STATUS_L[j.status]}</span>
       <span class="amt">${DT(totals(j).ttc)}</span></button>`).join('')}</div>`
-    : `<div class="empty">Aucun dossier ici.<br>Appuyez sur « Nouveau dossier » à l’arrivée d’une trottinette : la fiche vous guide de la réception au devis, puis jusqu’à la livraison.</div>`}
+    : `<div class="empty">Aucun dossier ici.<br>Appuyez sur « Nouveau dossier » à l’arrivée d’une trottinette ou d’un vélo électrique : la fiche vous guide de la réception au devis, puis jusqu’à la livraison.</div>`}
   </div>`;
 }
 
@@ -2104,12 +2321,12 @@ function stepReception(job){
    <section class="panel section"><h3>Client</h3>
      <div class="grid">${F(r+'client',{label:'Nom du client'})}${F(r+'tel',{label:'Téléphone',type:'tel'})}${F(r+'date',{label:'Date de réception',type:'date'})}</div>
    </section>
-   <section class="panel section"><h3>Trottinette</h3>
+   <section class="panel section"><h3>Véhicule (trottinette ou vélo électrique)</h3>
      <label class="f">Modèle (fiche technique : pannes et protocoles)<select id="kbModelSel">${kbModelOptions(job.rec.modelId||'')}</select></label>
      <div class="grid">${F(r+'marque',{label:'Marque',ph:'Xiaomi, Ninebot, Kaabo…'})}${F(r+'modele',{label:'Modèle'})}${F(r+'serie',{label:'N° de série'})}
      ${F(r+'tension',{label:'Tension batterie',type:'select',options:[['24','24 V'],['36','36 V'],['48','48 V'],['52','52 V'],['60','60 V'],['72','72 V']]})}
      ${F(r+'puissance',{label:'Puissance moteur (W)',type:'num'})}${F(r+'km',{label:'Kilométrage (km)',type:'num'})}</div>
-     ${F(r+'accessoires',{label:'Laissé avec la trottinette',ph:'chargeur, clé, antivol…'})}
+     ${F(r+'accessoires',{label:'Laissé avec le véhicule',ph:'chargeur, clé, antivol…'})}
    </section>
    <section class="panel section"><h3>Plainte du client</h3>
      ${F(r+'plainte',{type:'textarea',label:'Ce que décrit le client',ph:'Ex. : coupe en montée depuis une semaine, code 14 affiché'})}
@@ -2137,7 +2354,7 @@ function stepDiag(job){
      <div class="q"><span><b>1.</b> L’afficheur s’allume ?</span>${SEG('diag.q1',[['oui','Oui'],['non','Non']])}</div>
      ${d.q1==='oui'?`<div class="q"><span><b>2.</b> Un code d’erreur est affiché ?</span>${SEG('diag.q2',[['oui','Oui'],['non','Non']])}</div>`:''}
      ${d.q1==='oui'&&d.q2==='oui'?`<div class="grid">${F('diag.brand',{label:'Marque',type:'select',options:[['','Choisir…'],...BRANDS.map(b=>[b,b])]})}${F('diag.code',{label:'Code',ph:'Ex. 14, E3'})}</div><div id="codeOut" class="small"></div>`:''}
-     ${d.q1==='oui'&&d.q2?`<div class="q"><span><b>3.</b> Le moteur réagit à la gâchette ?</span>${SEG('diag.q3',[['oui','Oui, normal'],['acoups','À-coups, bruit'],['non','Non']])}</div>`:''}
+     ${d.q1==='oui'&&d.q2?`<div class="q"><span><b>3.</b> Le moteur réagit à la gâchette (ou au pédalage pour un VAE) ?</span>${SEG('diag.q3',[['oui','Oui, normal'],['acoups','À-coups, bruit'],['non','Non']])}</div>`:''}
     </div>
     <h3 style="margin-top:6px">Contrôles rapides</h3>
     <div class="q"><span>Freins débranchés, le moteur repart ?</span>${SEG('diag.freinTest',[['non','Non'],['oui','Oui']])}</div>
@@ -2370,7 +2587,7 @@ app.addEventListener('click', e=>{
   if(b.id==='trDep' && job){ trDepModal(job); return; }
   if(b.id==='trNotify' && job){ trNotify(job); return; }
   if(b.id==='trSendDevis' && job){ trSendDevis(job); return; }
-  if(b.id==='markReady' && job){ job.status='pret'; saveJobSoon(job,0); render(); toast('Trottinette prête à livrer'); return; }
+  if(b.id==='markReady' && job){ job.status='pret'; saveJobSoon(job,0); render(); toast('Véhicule prêt à livrer'); return; }
   if(b.id==='delJob'){ view.confirmDel=true; render(); return; }
   if(b.id==='delNo'){ view.confirmDel=false; render(); return; }
   if(b.id==='delYes' && job){ clearTimeout(timers[job.id]); S.jobs.delete(job.id); queue('job:'+job.id,()=>store.deleteJob(job.id)); go({page:'jobs', jobId:null, confirmDel:false}); toast('Dossier supprimé'); return; }
@@ -2389,7 +2606,7 @@ function showText(t){ const ta=document.createElement('textarea'); ta.value=t; t
 function devisText(job){
   const T=totals(job), s={...S.settings, atelier:cfg().shop}, r=job.rec;
   const L=job.devis.lines.map(l=>l.kind==='mo'?`- ${l.label} (${hm(l.minutes)}) : ${DT(l.minutes/60*l.rate)}`:`- ${l.label} ×${l.qty} : ${DT(l.qty*l.pu)}`).join('\n');
-  return `${s.atelier||'Atelier'} — Devis N° ${job.num}\nClient : ${r.client||''}\nTrottinette : ${[r.marque,r.modele].filter(Boolean).join(' ')} ${r.tension} V\n\n${L}\n\nMain-d’œuvre : ${DT(T.mo)}\nPièces : ${DT(T.pc)}${T.remise?`\nRemise : -${DT(T.remise)}`:''}\nTOTAL TTC : ${DT(T.ttc)} (dont TVA ${T.tvaRate} % : ${DT(T.tva)})\n\nTemps de réparation : ${hm(T.moMin)}\nDevis valable ${s.validite||15} jours.${job.devis.note?'\n'+job.devis.note:''}`;
+  return `${s.atelier||'Atelier'} — Devis N° ${job.num}\nClient : ${r.client||''}\nVéhicule : ${[r.marque,r.modele].filter(Boolean).join(' ')} ${r.tension} V\n\n${L}\n\nMain-d’œuvre : ${DT(T.mo)}\nPièces : ${DT(T.pc)}${T.remise?`\nRemise : -${DT(T.remise)}`:''}\nTOTAL TTC : ${DT(T.ttc)} (dont TVA ${T.tvaRate} % : ${DT(T.tva)})\n\nTemps de réparation : ${hm(T.moMin)}\nDevis valable ${s.validite||15} jours.${job.devis.note?'\n'+job.devis.note:''}`;
 }
 function devisHTML(job, fiche){
   const T=totals(job), c=cfg(), s={...S.settings, atelier:c.shop, adresse:c.address, tel:c.phone, mf:c.mf}, r=job.rec, d=job.diag;
@@ -2403,7 +2620,7 @@ function devisHTML(job, fiche){
   </style></head><body>
   <div class="head"><div>${c.logo?`<img src="${c.logo}" alt="" style="max-height:70px;max-width:220px"><br>`:''}<h1>${esc(s.atelier||'Atelier')}</h1>${esc(s.adresse||'')}<br>${esc(s.tel||'')}${s.mf?'<br>MF : '+esc(s.mf):''}</div>
   <div class="r"><h1>${fiche?'Fiche de sortie':'Devis'} N° ${esc(job.num)}</h1>Date : ${frD(today())}<br>${fiche?'':`Valable ${s.validite||15} jours`}</div></div>
-  <h2>Client et trottinette</h2><p>${esc(r.client||'')} · ${esc(r.tel||'')}<br>${esc([r.marque,r.modele].filter(Boolean).join(' '))} · ${esc(r.tension)} V${r.serie?' · N° '+esc(r.serie):''}${r.km?' · '+esc(r.km)+' km':''}</p>
+  <h2>Client et véhicule</h2><p>${esc(r.client||'')} · ${esc(r.tel||'')}<br>${esc([r.marque,r.modele].filter(Boolean).join(' '))} · ${esc(r.tension)} V${r.serie?' · N° '+esc(r.serie):''}${r.km?' · '+esc(r.km)+' km':''}</p>
   ${r.plainte?`<p><b>Motif :</b> ${esc(r.plainte)}</p>`:''}
   ${faults||d.conclusion?`<h2>Diagnostic</h2>${faults?`<ul>${faults}</ul>`:''}${d.conclusion?`<p>${esc(d.conclusion)}</p>`:''}`:''}
   <h2>${fiche?'Travaux réalisés':'Détail du devis'}</h2><table><thead><tr><th>Désignation</th><th class="r">Temps / Qté</th><th class="r">Taux / PU TTC</th><th class="r">Total TTC</th></tr></thead><tbody>${rows}</tbody></table>
@@ -2813,6 +3030,84 @@ function packsGrid(){const g=$('#posGrid'),h=$('#catTabs');g.className='grid';
   h.innerHTML=`<button class="btn" data-act="catHome">← Catégories</button><b>⚡ Forfaits</b><span class="small muted">${packsAll().length} forfait(s)</span><span class="spacer"></span><button class="btn sm" data-act="pkList">Gérer</button>`;
   g.innerHTML=packsAll().map(pk=>`<button class="tile svc" data-act="addPack" data-id="${pk.id}"><span class="tn">⚡ ${esc(pk.name)}</span><span class="tf"><span class="tc">${pk.lines.length} article(s)</span><span class="tp">${fmt(packPrice(pk))}</span></span></button>`).join('')+`<button class="tile" data-act="pkNew" style="border-style:dashed"><span class="tn">+ Nouveau forfait</span></button>`}
 
+/* ================= DÉPÔT GROUPÉ : plusieurs vélos d'un même client ================= */
+const lotOf=id=>id?Object.values(S.devis).filter(d=>d.lotId===id).sort((a,b)=>(a.lotIdx||0)-(b.lotIdx||0)||(a.ts||0)-(b.ts||0)):[];
+const lotIds=()=>[...new Set(Object.values(S.devis).map(d=>d.lotId).filter(Boolean))];
+function lotNewNum(){const used=new Set(Object.values(S.devis).map(d=>d.lotNum).filter(Boolean));let n=lotIds().length+1,num;do{num='D'+String(n++).padStart(3,'0')}while(used.has(num));return num}
+function ficheNewNum(skip){const used=new Set([...Object.values(S.devis).map(d=>d.num),...(skip||[])]);let n=Object.keys(S.devis).length+1,num;do{num='F'+String(n++).padStart(4,'0')}while(used.has(num));return num}
+const bikeLbl=d=>[d.bikeBrand,d.bikeType].filter(Boolean).join(' ')||'Vélo '+(d.lotIdx||'');
+function lotStatus(L){const open=L.filter(d=>!d.paid);return{open,ready:open.filter(d=>d.status==='pret'),net:r3(open.reduce((s,d)=>s+devisNet(d),0)),dep:r3(open.reduce((s,d)=>s+depositSum(d.id),0))}}
+/* bandeau « Dépôts en cours » au-dessus du tableau de l'atelier */
+function lotStrip(){const el=$('#lotStrip');if(!el)return;const L=lotIds().map(id=>lotOf(id)).filter(l=>l.some(d=>!d.paid));
+  el.innerHTML=L.length?`<div class="row" style="gap:8px"><b class="small">Dépôts de plusieurs vélos en cours :</b>${L.map(l=>{const s=lotStatus(l);return`<button class="btn sm" data-act="lotOpen" data-id="${esc(l[0].lotId)}">${esc(l[0].lotNum)} · ${esc(l[0].clientName||'Client')} · ${l.length} vélos${s.ready.length?` · <span style="color:var(--ok)">${s.ready.length} prêt${s.ready.length>1?'s':''}</span>`:''}</button>`}).join('')}</div>`:''}
+/* ---- création : un client, plusieurs vélos ---- */
+let dgRows=[],dgCli={code:'',name:'',phone:''};
+const dgEmpty=()=>({bikeBrand:'',bikeType:'',serial:'',request:''});
+function dgNewModal(){dgRows=[dgEmpty(),dgEmpty()];dgCli={code:'',name:'',phone:''};
+  openModal(head('Dépôt de plusieurs vélos','Un client, plusieurs vélos : une fiche par vélo, toutes regroupées dans le même dépôt')+`<div class="sh-b">
+   <h3>Client</h3><div class="fgrid"><label class="fl">Nom<input class="f" id="dgName" autocomplete="off"></label><label class="fl">N° mobile<input class="f" id="dgPhone" inputmode="tel" autocomplete="off"></label></div>
+   <div class="sugg" id="dgSugg" hidden></div><div id="dgCliInfo" class="small muted"></div>
+   <div class="row"><h3>Vélos déposés</h3><span class="chip" id="dgCount"></span><span class="spacer"></span><span class="small muted">Nombre de vélos :</span>${[2,3,4,5,6,8,10].map(n=>`<button class="btn sm" type="button" data-act="dgN" data-n="${n}">${n}</button>`).join('')}</div>
+   <datalist id="dgTypes">${['VTT','Route','Ville','VAE','BMX','Enfant','Pliant','Gravel'].map(x=>`<option value="${x}">`).join('')}</datalist>
+   <div id="dgRows" style="display:flex;flex-direction:column;gap:10px"></div>
+   <div class="row"><button class="btn" type="button" data-act="dgAdd">+ Ajouter un vélo</button><button class="btn ghost" type="button" data-act="dgCopy">Copier la demande du vélo 1 sur tous</button></div>
+  </div><div class="sh-f"><button class="btn" data-act="close">Annuler</button><span class="spacer"></span><button class="btn primary" data-act="dgSave" style="min-width:180px">Créer les fiches</button></div>`,true);
+  const sg=src=>{const q=src==='phone'?String($('#dgPhone').value).replace(/\D/g,''):norm($('#dgName').value).trim();const el=$('#dgSugg');
+    if(dgCli.code&&S.clients[dgCli.code]&&S.clients[dgCli.code].name!==$('#dgName').value.trim())dgCli.code='';dgInfo();
+    if(!q||q.length<2){el.hidden=true;return}const L=Object.values(S.clients).filter(c=>norm(c.name).includes(q)||norm(c.code).includes(q)||norm(c.phone).includes(q)).slice(0,8);
+    el.innerHTML=L.map(c=>`<button class="li" type="button" data-act="dgCliPick" data-code="${esc(c.code)}"><span class="mono">${esc(c.code)}</span><b>${esc(c.name)}</b><span class="spacer"></span><span class="mono">${esc(c.phone||'')}</span></button>`).join('');el.hidden=!L.length};
+  $('#dgName').addEventListener('input',()=>sg());$('#dgPhone').addEventListener('input',()=>sg('phone'));dgRender();$('#dgName').focus()}
+function dgInfo(){const el=$('#dgCliInfo');if(!el)return;el.innerHTML=dgCli.code?`<span class="chip ok">Client ${esc(dgCli.code)}</span>`:$('#dgName').value.trim()?'<span class="chip warn">Nouveau client</span> son code sera créé automatiquement.':''}
+function dgRead(){document.querySelectorAll('#dgRows [data-dg]').forEach(i=>{const r=dgRows[+i.dataset.i];if(r)r[i.dataset.dg]=i.value.trim()})}
+function dgRender(){const el=$('#dgRows');if(!el)return;
+  el.innerHTML=dgRows.map((r,i)=>`<div class="panel pad" style="display:flex;flex-direction:column;gap:8px;background:var(--panel2)"><div class="row"><b>Vélo ${i+1}</b><span class="spacer"></span>${dgRows.length>1?`<button class="btn sm ghost" type="button" data-act="dgDel" data-i="${i}">Retirer</button>`:''}</div>
+   <div class="fgrid"><label class="fl">Marque<input class="f" data-dg="bikeBrand" data-i="${i}" value="${esc(r.bikeBrand)}"></label><label class="fl">Type<input class="f" list="dgTypes" data-dg="bikeType" data-i="${i}" value="${esc(r.bikeType)}"></label><label class="fl">N° de série / repère<input class="f" data-dg="serial" data-i="${i}" value="${esc(r.serial)}" placeholder="ou couleur, taille…"></label></div>
+   <label class="fl">Demande du client<input class="f" data-dg="request" data-i="${i}" value="${esc(r.request)}" placeholder="Ex. révision, crevaison, freins…"></label></div>`).join('');
+  $('#dgCount').textContent=dgRows.length+' vélo'+(dgRows.length>1?'s':'')}
+function dgSave(){dgRead();const name=$('#dgName').value.trim(),phone=$('#dgPhone').value.trim();if(!name)return toast('Indiquez le nom du client');
+  const rows=dgRows.filter(r=>r.bikeBrand||r.bikeType||r.serial||r.request);if(!rows.length)return toast('Décrivez au moins un vélo (marque, type ou demande)');
+  const code=dgCli.code||newClientCode(phone);const ex=S.clients[code];const c={...(ex||{code,rewardsUsed:0,created:today()}),name,phone:phone||(ex&&ex.phone)||''};if(!ex||ex.name!==c.name||ex.phone!==c.phone)put('clients',code,c);
+  const lotId=uid('L'),lotNum=lotNewNum();const nums=[];const t0=Date.now();
+  rows.forEach((r,i)=>{const num=ficheNewNum(nums);nums.push(num);const f={id:uid('F'),num,date:today(),ts:t0+i,status:'trier',clientCode:code,clientName:name,phone:c.phone,bikeBrand:r.bikeBrand,bikeType:r.bikeType,serial:r.serial,request:r.request,lines:[],discount:0,paid:false,lotId,lotNum,lotIdx:i+1,updated:t0};put('devis',f.id,f)});
+  toast(rows.length+' fiches créées · dépôt '+lotNum);lotModal(lotId)}
+/* ---- ajouter un vélo à un dépôt (ou transformer une fiche seule en dépôt) ---- */
+function lotAddBike(fromId){const src=S.devis[fromId];if(!src)return;let lotId=src.lotId,lotNum=src.lotNum;
+  if(!lotId){lotId=uid('L');lotNum=lotNewNum();put('devis',src.id,{...src,lotId,lotNum,lotIdx:1,updated:Date.now()})}
+  const L=lotOf(lotId);const idx=Math.max(0,...L.map(d=>d.lotIdx||0))+1;
+  const f={id:uid('F'),num:ficheNewNum(),date:today(),ts:Date.now(),status:'trier',clientCode:src.clientCode,clientName:src.clientName,phone:src.phone,bikeBrand:'',bikeType:'',serial:'',request:'',lines:[],discount:0,paid:false,lotId,lotNum,lotIdx:idx,updated:Date.now()};
+  put('devis',f.id,f);ficheModal(f.id);toast('Vélo '+idx+' ajouté au dépôt '+lotNum+' : complétez sa fiche')}
+/* encart dans la fiche d'un vélo */
+function lotFichePanel(){if(!fd)return'';const saved=!!S.devis[fd.id];
+  if(!fd.lotId)return`<div class="row small" style="gap:8px;border:1px dashed var(--line);border-radius:8px;padding:8px 12px"><span class="muted">Le client a laissé d’autres vélos ?</span><button class="btn sm" data-act="lotAddFromFiche">+ Ajouter un autre vélo de ce client</button></div>`;
+  const L=lotOf(fd.lotId);
+  return`<div class="panel pad" style="display:flex;flex-direction:column;gap:8px;background:var(--panel2)"><div class="row"><h3>Dépôt ${esc(fd.lotNum)} · vélo ${fd.lotIdx||'?'} sur ${L.length}</h3><span class="spacer"></span><button class="btn sm" data-act="lotOpenFromFiche">Voir tout le dépôt</button><button class="btn sm" data-act="lotAddFromFiche">+ Ajouter un vélo</button></div>
+   <div class="row" style="gap:6px">${L.map(d=>`<button class="btn sm ${d.id===fd.id?'primary':''}" data-act="lotGoFiche" data-id="${d.id}" ${d.id===fd.id?'disabled':''}>${d.lotIdx}. ${esc(bikeLbl(d))} · ${esc(ST[d.status||'trier'].l)}${d.paid?' · payé':''}</button>`).join('')}</div>${saved?'':'<span class="small muted">Enregistrez cette fiche pour la garder dans le dépôt.</span>'}</div>`}
+/* ---- vue d'ensemble d'un dépôt ---- */
+let lotCur='';
+function lotModal(id){const L=lotOf(id);if(!L.length)return closeModal();lotCur=id;const f0=L[0];const s=lotStatus(L);
+  openModal(head('Dépôt '+esc(f0.lotNum)+' · '+esc(f0.clientName||''),L.length+' vélos · déposés le '+frD(L.map(d=>d.date).sort()[0])+(f0.phone?' · '+esc(f0.phone):''))+`<div class="sh-b">
+   <div class="kpis"><div class="kpi"><span class="k">Vélos</span><span class="v">${L.length}</span><span class="s">${s.ready.length} prêt(s) · ${L.filter(d=>d.paid).length} payé(s)</span></div><div class="kpi"><span class="k">Total à payer</span><span class="v">${fmt(s.net)}</span></div><div class="kpi"><span class="k">Acomptes</span><span class="v">${fmt(s.dep)}</span></div><div class="kpi hl"><span class="k">Reste</span><span class="v">${fmt(s.net-s.dep)}</span></div></div>
+   <div class="tbl-wrap"><table><thead><tr><th>N°</th><th>Fiche</th><th>Vélo</th><th>Demande</th><th>Statut</th><th class="n">Montant</th><th></th></tr></thead><tbody>${L.map(d=>`<tr class="click" data-act="lotGoFiche" data-id="${d.id}"><td><b>${d.lotIdx||''}</b></td><td class="mono">${esc(d.num)}</td><td>${esc(bikeLbl(d))}${d.serial?`<div class="small muted">${esc(d.serial)}</div>`:''}</td><td class="small">${esc(d.request||'')}</td><td>${d.paid?'<span class="chip ok">Payé</span>':`<span class="chip ${d.status==='pret'?'ok':d.status==='reparation'?'acc':''}">${esc(ST[d.status||'trier'].l)}</span>`}</td><td class="n mono">${fmt(devisNet(d))}${depositSum(d.id)&&!d.paid?`<div class="small muted">acompte ${fmt(depositSum(d.id))}</div>`:''}</td><td><button class="btn sm" data-act="lotGoFiche" data-id="${d.id}">Ouvrir</button></td></tr>`).join('')}</tbody></table></div>
+   <p class="small muted" style="margin:0">Chaque vélo garde sa fiche (travaux, statut, zone). Un acompte versé sur n’importe quelle fiche du dépôt est déduit quand vous encaissez tout le dépôt.</p>
+  </div><div class="sh-f"><button class="btn" data-act="lotAdd" data-id="${esc(id)}">+ Ajouter un vélo</button><span class="spacer"></span><button class="btn" data-act="lotPrint" data-id="${esc(id)}">Bon de dépôt / récapitulatif</button><button class="btn" data-act="lotNotify" data-id="${esc(id)}">📲 Prévenir le client</button>${s.open.length?`<button class="btn ok" data-act="lotCash" data-id="${esc(id)}">Encaisser tout le dépôt</button>`:''}</div>`,true)}
+function lotDoc(id){const L=lotOf(id);const c=cfg();const f0=L[0];const net=r3(L.reduce((s,d)=>s+devisNet(d),0));const dep=r3(L.filter(d=>!d.paid).reduce((s,d)=>s+depositSum(d.id),0));const paid=r3(L.filter(d=>d.paid).reduce((s,d)=>s+devisNet(d),0));
+  return docShell('Dépôt '+f0.lotNum,`${c.logo?`<img src="${c.logo}" alt="" style="max-height:80px;max-width:240px">`:''}<h2>${esc(c.shop)}</h2><div>${esc(c.address||'')}${c.phone?' · Tél '+esc(c.phone):''}${c.mf?' · MF '+esc(c.mf):''}</div>
+   <h1 style="font-size:22px;margin:18px 0 4px">Bon de dépôt N° ${esc(f0.lotNum)} — ${L.length} vélos</h1><div>Client : <b>${esc(f0.clientName||'')}</b>${f0.clientCode?' ('+esc(f0.clientCode)+')':''}${f0.phone?' · '+esc(f0.phone):''} · Déposés le ${frD(L.map(d=>d.date).sort()[0])} · Imprimé le ${frD(today())}</div>
+   <table style="margin-top:14px"><thead><tr><th>N°</th><th>Fiche</th><th>Vélo</th><th>N° de série / repère</th><th>Demande</th><th>Statut</th><th class="n">Montant (DT)</th></tr></thead><tbody>${L.map(d=>`<tr><td>${d.lotIdx||''}</td><td>${esc(d.num)}</td><td>${esc(bikeLbl(d))}</td><td>${esc(d.serial||'')}</td><td>${esc(d.request||'')}${(d.lines||[]).length?`<div style="font-size:12px;color:#555">${d.lines.map(l=>esc(l.name)+(l.qty!==1?' × '+l.qty:'')).join(' · ')}</div>`:''}</td><td>${d.paid?'Payé':esc(ST[d.status||'trier'].l)}</td><td class="n">${devisNet(d)?fmt(devisNet(d)):'à chiffrer'}</td></tr>`).join('')}</tbody></table>
+   <table style="margin-top:10px;width:auto;margin-left:auto"><tbody><tr><td>Total des travaux (TTC)</td><td class="n"><b>${fmt(net)}</b></td></tr>${paid?`<tr><td>Déjà payé</td><td class="n">${fmt(paid)}</td></tr>`:''}${dep?`<tr><td>Acomptes versés</td><td class="n">${fmt(dep)}</td></tr>`:''}<tr><td><b>Reste à payer</b></td><td class="n"><b>${fmt(net-paid-dep)}</b></td></tr></tbody></table>
+   <div style="display:flex;justify-content:space-between;gap:40px;margin-top:40px"><div style="flex:1;border-top:1px solid #999;padding-top:6px">Signature de l’atelier</div><div style="flex:1;border-top:1px solid #999;padding-top:6px">Signature du client</div></div>
+   <p style="font-size:12px;color:#555;margin-top:20px">Conservez ce bon : il est demandé au retrait des vélos.</p>`)}
+function lotOut(name,html){if(typeof printDoc==='function')printDoc(html);else download(name,html,'text/html')}
+function lotNotify(id){const L=lotOf(id);const f0=L[0];const ph=f0.phone||((S.clients[U(f0.clientCode)]||{}).phone)||'';if(!ph)return toast('Pas de téléphone pour ce client');const s=lotStatus(L);const R=s.ready.length?s.ready:s.open;
+  if(!R.length)return toast('Tous les vélos de ce dépôt sont déjà payés');const amt=r3(R.reduce((x,d)=>x+devisNet(d)-depositSum(d.id),0));const all=R.length===s.open.length;
+  const txt=`Bonjour ${f0.clientName||''}, ${R.length>1?`vos ${R.length} vélos sont prêts`:'votre vélo est prêt'}${all?'':` (${R.length} sur ${s.open.length})`} :\n${R.map(d=>'• '+bikeLbl(d)+(d.request?' — '+d.request:'')).join('\n')}\nVous pouvez venir ${R.length>1?'les':'le'} récupérer chez ${cfg().shop}. Montant à régler : ${fmt(amt)} DT. Merci !`;
+  msgChoice(ph,txt,'Prévenir le client',{name:f0.clientName,onBack:()=>lotModal(id)})}
+function lotCash(id){const L=lotOf(id).filter(d=>!d.paid);const W=L.filter(d=>(d.lines||[]).length);if(!W.length)return toast('Aucun travail chiffré : ajoutez les lignes dans les fiches des vélos');
+  const go2=()=>{cart=emptyCart();cart.lines=W.flatMap(d=>d.lines.map(l=>({...l,name:'Vélo '+(d.lotIdx||'')+' · '+l.name})));cart.clientCode=U(W[0].clientCode);cart.devisId='';cart.lotIds=W.map(d=>d.id);cart.discAmt=r3(W.reduce((s,d)=>s+(+d.discount||0),0));cart.note='Dépôt '+W[0].lotNum+' : fiches '+W.map(d=>d.num).join(', ');
+    sel=-1;saveCart();closeModal();if(typeof posSide!=='undefined')posSide='ticket';go('vente');toast(W.length+' vélo(s) du dépôt '+W[0].lotNum+' dans le ticket')};
+  const miss=L.length-W.length;const run=()=>cart.lines.length?ask('Le ticket en cours sera remplacé par ce dépôt.','Remplacer',go2,false):go2();
+  if(miss)ask(miss+' vélo(s) sans travaux chiffrés resteront en atelier. Encaisser les '+W.length+' autres ?','Encaisser',run,false);else run()}
+
 /* ================= VUE RÉGLAGES ================= */
 V.reglages={build(el){const c=cfg();el.innerHTML=`<div class="view" style="max-width:900px"><h1>Réglages</h1>
   <div class="panel pad" style="display:flex;flex-direction:column;gap:12px"><h2>Boutique</h2><div class="fgrid"><label class="fl">Nom de la boutique<input class="f" id="sShop" value="${esc(c.shop)}"></label><label class="fl">Activité (sous le nom)<input class="f" id="sTag" value="${esc(c.tagline)}"></label></div><div class="fgrid"><label class="fl">Adresse<input class="f" id="sAddr" value="${esc(c.address)}"></label><label class="fl">Téléphone<input class="f" id="sPhone" value="${esc(c.phone)}"></label></div><label class="fl">Message en bas du ticket<input class="f" id="sFoot" value="${esc(c.footer)}"></label>
@@ -2895,8 +3190,14 @@ const A={
  printDevis:()=>{readFiche();printDoc(devisDoc(fd))},
  dlReceipt:e=>{const t=S.tickets[e.dataset.id];download('ticket-'+t.date+'-'+t.num+'.html',docShell('Ticket '+t.num,`<div class="receipt">${receiptBody(t)}</div>`),'text/html')},
  voidTicket:e=>{const id=e.dataset.id;ask('Annuler ce ticket ? Le stock des articles sera remis.','Annuler le ticket',()=>{const t=S.tickets[id];put('tickets',id,{...t,voided:true,voidedAt:Date.now()});consOnTicket(t,true);trOnTicket(t,true);if(!t.v)t.lines.forEach(l=>{const p=S.products[l.code];if(p&&p.stock!=null&&p.stock!=='')put('products',p.code,{...S.products[l.code],stock:r3(S.products[l.code].stock+l.qty)})});
-   if(t.kind!=='acompte'&&t.devisId&&(S.orders||{})[t.devisId])put('orders',t.devisId,{...S.orders[t.devisId],status:'recu',ticketId:'',updated:Date.now()});if(t.kind!=='acompte'&&t.devisId&&S.devis[t.devisId])put('devis',t.devisId,{...S.devis[t.devisId],paid:false,status:'pret',ticketId:''});if(!t.v&&t.reward&&S.clients[t.clientCode])put('clients',t.clientCode,{...S.clients[t.clientCode],rewardsUsed:Math.max(0,(S.clients[t.clientCode].rewardsUsed||0)-1)});closeModal();toast('Ticket annulé')})},
- newFiche:()=>ficheModal(),editFiche:e=>ficheModal(e.dataset.id),
+   if(t.kind!=='acompte'&&t.devisId&&(S.orders||{})[t.devisId])put('orders',t.devisId,{...S.orders[t.devisId],status:'recu',ticketId:'',updated:Date.now()});if(t.kind!=='acompte'&&t.devisId&&S.devis[t.devisId])put('devis',t.devisId,{...S.devis[t.devisId],paid:false,status:'pret',ticketId:''});(t.kind!=='acompte'?(t.lotIds||[]):[]).forEach(i=>{if(S.devis[i]&&S.devis[i].ticketId===t.id)put('devis',i,{...S.devis[i],paid:false,status:'pret',ticketId:''})});if(!t.v&&t.reward&&S.clients[t.clientCode])put('clients',t.clientCode,{...S.clients[t.clientCode],rewardsUsed:Math.max(0,(S.clients[t.clientCode].rewardsUsed||0)-1)});closeModal();toast('Ticket annulé')})},
+ newFiche:()=>ficheModal(),
+ dgNew:()=>dgNewModal(),dgN:e=>{dgRead();const n=+e.dataset.n;while(dgRows.length<n)dgRows.push(dgEmpty());if(dgRows.length>n)dgRows=dgRows.slice(0,n);dgRender()},dgAdd:()=>{dgRead();dgRows.push(dgEmpty());dgRender()},dgDel:e=>{dgRead();dgRows.splice(+e.dataset.i,1);dgRender()},
+ dgCopy:()=>{dgRead();const q=dgRows[0]&&dgRows[0].request;if(!q)return toast('Écrivez d’abord la demande du vélo 1');dgRows.forEach(r=>{if(!r.request)r.request=q});dgRender()},dgSave:()=>dgSave(),
+ dgCliPick:e=>{const c=S.clients[e.dataset.code];if(!c)return;dgCli={code:c.code,name:c.name,phone:c.phone||''};$('#dgName').value=c.name;$('#dgPhone').value=c.phone||'';$('#dgSugg').hidden=true;dgInfo()},
+ lotOpen:e=>lotModal(e.dataset.id),lotGoFiche:e=>ficheModal(e.dataset.id),lotAdd:e=>{const L=lotOf(e.dataset.id);if(L.length)lotAddBike(L[0].id)},
+ lotAddFromFiche:()=>{if(!saveFiche(true))return;lotAddBike(fd.id)},lotOpenFromFiche:()=>{if(S.devis[fd.id])saveFiche(true);lotModal(fd.lotId)},
+ lotPrint:e=>{const L=lotOf(e.dataset.id);if(L.length)lotOut('depot-'+L[0].lotNum+'.html',lotDoc(e.dataset.id))},lotNotify:e=>lotNotify(e.dataset.id),lotCash:e=>lotCash(e.dataset.id),editFiche:e=>ficheModal(e.dataset.id),
  fAddLine:()=>ficheAddLine(),fPick:e=>ficheAddLine(e.dataset.code),fBrowse:()=>fBrowse(''),fBrowseCat:e=>fBrowse(e.dataset.c),fBrowseClose:()=>{const s=$('#fSugg');s.hidden=true;fBrowseCat=''},fCliPick:e=>fillClient(e.dataset.code),fDelLine:e=>{readFiche();fd.lines.splice(+e.dataset.i,1);renderFLines()},
  saveFiche:()=>saveFiche(),
  delFiche:()=>depositSum(fd.id)&&!fd.paid?toast('Cette fiche a un acompte : annulez-le d\'abord (onglet Caisse) ou encaissez la fiche.'):ask('Supprimer la fiche '+fd.num+' ?','Supprimer',()=>{del('devis',fd.id);closeModal()}),
