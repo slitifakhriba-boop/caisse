@@ -3260,12 +3260,38 @@ function demoReset(){ask('Remettre la démo à zéro ? Vos essais seront effacé
   try{idb&&idb.close()}catch(e){}const r=indexedDB.deleteDatabase('caisse-demo-v1');r.onsuccess=r.onerror=r.onblocked=()=>location.reload()},false)}
 function demoWelcome(){if(lsGet('demo-spa-demo-seen'))return;lsSet('demo-spa-demo-seen','1');openModal(head('Bienvenue dans la démo','Caisse et atelier de réparation')+`<div class="sh-b">
   <p style="margin:0">Ceci est une <b>version de démonstration</b>. Les clients, ventes et fiches sont <b>fictifs</b>.</p>
-  <p style="margin:0">Vous pouvez tout essayer : vendre, ouvrir une fiche atelier, créer un dossier trottinette, consulter les fiches techniques, les rapports… Rien n’est envoyé sur internet : vos essais restent seulement sur votre appareil.</p>
+  <p style="margin:0">Vous pouvez l’essayer pendant <b>2 jours</b> : vendre, ouvrir une fiche atelier, créer un dossier trottinette, consulter les fiches techniques, les rapports… Rien n’est envoyé sur internet : vos essais restent seulement sur votre appareil.</p>
   <p class="small muted" style="margin:0">Pour revenir aux exemples de départ : bouton « Remettre la démo à zéro » en bas de l’écran.</p></div>
   <div class="sh-f"><span class="spacer"></span><button class="btn primary" data-act="close">Découvrir</button></div>`)}
 (function(){const b=document.createElement('div');b.id='demoBar';b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:8px;z-index:50;display:flex;gap:10px;align-items:center;background:#b45309;color:#fff;font:600 13px system-ui,sans-serif;padding:6px 8px 6px 14px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:calc(100% - 16px)';
   b.innerHTML='<span>Version de démonstration · données fictives</span><button type="button" style="border:0;background:#fff;color:#b45309;font:600 12px system-ui,sans-serif;padding:5px 10px;border-radius:999px;cursor:pointer;white-space:nowrap">Remettre la démo à zéro</button>';
   b.querySelector('button').addEventListener('click',demoReset);document.body.appendChild(b)})();
+/* ---- démo bridée : 2 jours, documents marqués, pas d'import / sauvegarde, quantités limitées ---- */
+const DEMO_HOURS=48,DEMO_END=new Date('2026-11-02T23:59:00+01:00').getTime(),DEMO_MAX={tickets:20,devis:10,trott:5};
+function demoT0(){let t=0;try{t=+localStorage.getItem('dx-t0')||0;if(!t){t=Date.now();localStorage.setItem('dx-t0',String(t))}}catch(e){t=Date.now()}return t}
+const demoUntil=()=>Math.min(demoT0()+DEMO_HOURS*3600e3,DEMO_END);
+const demoExpired=()=>Date.now()>demoUntil();
+function demoLock(){if(document.getElementById('demoEnd'))return;try{closeModal()}catch(e){}document.body.insertAdjacentHTML('beforeend','<div id="demoEnd" style="position:fixed;inset:0;z-index:100000;display:grid;place-items:center;background:#151d27;color:#fff;font:16px system-ui,sans-serif;padding:24px;text-align:center"><div style="max-width:440px;display:flex;flex-direction:column;gap:14px"><b style="font-size:24px">La démo est terminée</b><span style="color:#cbd5e1">La période d’essai de 2 jours est écoulée. Pour obtenir l’application pour votre atelier, contactez la personne qui vous a envoyé ce lien.</span></div></div>');document.body.style.overflow='hidden'}
+setInterval(()=>{if(demoExpired())demoLock()},60000);
+const demoSeedIds={};for(const c of ['tickets','devis','trott'])demoSeedIds[c]=new Set(Object.keys((window.DEMO_DATA||{})[c]||{}));
+const demoNew=c=>Object.keys(S[c]).filter(id=>!demoSeedIds[c].has(id)).length;
+const DEMO_LBL={tickets:'ventes',devis:'fiches atelier',trott:'dossiers trottinette'};
+const demoFull=c=>demoNew(c)>=DEMO_MAX[c];
+const demoMsg=c=>toast('Version démo : '+DEMO_MAX[c]+' '+DEMO_LBL[c]+' au maximum. Remettez la démo à zéro pour recommencer.');
+const _put=put;put=function(col,id,data){if(demoExpired()){demoLock();return Promise.resolve()}if(DEMO_MAX[col]&&!S[col][id]&&!demoSeedIds[col].has(id)&&demoFull(col)){demoMsg(col);return Promise.resolve()}return _put(col,id,data)};
+const _pay=A.pay;A.pay=function(...a){if(demoFull('tickets'))return demoMsg('tickets');return _pay.apply(this,a)};
+const _payOk=A.payOk;A.payOk=function(...a){if(demoFull('tickets')){closeModal();return demoMsg('tickets')}return _payOk.apply(this,a)};
+/* pas de sauvegarde, d'export ni d'import */
+const demoOff=()=>toast('Désactivé dans la version démo');
+A.backup=demoOff;
+const _dl=download;download=function(name,data,mime){if(/\.(json|csv|xlsx?)$/i.test(name||''))return demoOff();return _dl(name,demoMark(data,mime),mime)};
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.type==='file'&&!['kbPhotoIn','logoIn'].includes(t.id)){e.stopImmediatePropagation();t.value='';demoOff()}},true);
+/* tous les documents imprimés ou téléchargés portent « DÉMONSTRATION » */
+const DEMO_WM='<div style="position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:9999"><div style="transform:rotate(-30deg);font:900 72px Arial,sans-serif;color:rgba(200,0,0,.18);letter-spacing:6px;white-space:nowrap">DÉMONSTRATION</div></div><div style="border:2px solid #c00;color:#c00;font:700 13px Arial,sans-serif;text-align:center;padding:4px;margin-bottom:8px">DOCUMENT DE DÉMONSTRATION · SANS VALEUR</div>';
+function demoMark(html,mime){if(typeof html!=='string'||(mime&&!/html/.test(mime)))return html;return/<body[^>]*>/i.test(html)?html.replace(/<body([^>]*)>/i,'<body$1>'+DEMO_WM):DEMO_WM+html}
+const _print=printDoc;printDoc=function(html){return _print(demoMark(html,'text/html'))};
+const _rcptHead=rcptHead;rcptHead=function(c){return'<div class="c h">*** DÉMONSTRATION ***</div>'+_rcptHead(c)};
+(function(){const b=document.getElementById('demoBar');if(!b)return;const s=b.querySelector('span');const upd=()=>{const h=Math.max(0,Math.ceil((demoUntil()-Date.now())/3600e3));s.textContent='Version de démonstration · '+(h>24?'encore '+Math.ceil(h/24)+' jours':'encore '+h+' h')};upd();setInterval(upd,60000)})();
 /* ---------- démarrage ---------- */
 go(view);
 (async()=>{
@@ -3273,7 +3299,7 @@ go(view);
     try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
   }catch(e){console.error(e);toast('Stockage indisponible : n\'utilisez pas la navigation privée.')}
   bump();await countOutbox();
-  if(!Object.keys(S.products).length)await demoSeed();lsSet('demo-spa-welcomed','1');runSync();demoWelcome();
+  if(demoExpired())return demoLock();if(!Object.keys(S.products).length)await demoSeed();lsSet('demo-spa-welcomed','1');runSync();demoWelcome();
 })();
 </script>
 
