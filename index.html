@@ -665,7 +665,7 @@ function ficheModal(id){const src=id?S.devis[id]:null;const nextNum='F'+String(O
    <label class="fl">Demande du client<textarea class="f" id="fReq">${esc(fd.request)}</textarea></label>
    <label class="fl">Statut / zone<select class="f" id="fStatus">${ST_KEYS.map(k=>`<option value="${k}" ${fd.status===k?'selected':''}>${ST[k].l}${ST[k].z?' — '+ST[k].z:''}</option>`).join('')}</select></label>
    <h3>Travail effectué — devis</h3>
-   <div class="pick"><div class="row" style="flex-wrap:nowrap"><input class="f" id="fAdd" placeholder="Chercher un article ou un service (nom ou code)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="btn" data-act="fBrowse">Catégories</button></div><div class="sugg" id="fSugg" hidden></div></div>
+   <div class="pick"><div class="row" style="flex-wrap:nowrap"><input class="f" id="fAdd" placeholder="Chercher un article ou un service (nom ou code)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="btn" data-act="fPacks" style="white-space:nowrap">⚡ Forfaits</button><button class="btn" data-act="fBrowse">Catégories</button></div><div class="sugg" id="fSugg" hidden></div></div>
    <div id="fLines"></div>
    <div id="fDep"></div>
    ${lotFichePanel()}
@@ -678,7 +678,8 @@ function ficheModal(id){const src=id?S.devis[id]:null;const nextNum='F'+String(O
 let fBrowseCat='';
 function fSuggest(){const el=$('#fSugg');if(!el)return;const q=norm($('#fAdd').value.trim());if(!q){el.hidden=true;el.innerHTML='';return}
   const list=derive().prods.filter(p=>norm(p.name).includes(q)||norm(p.code).includes(q)||norm(p.brand).includes(q)).sort((a,b)=>(norm(b.code)===q)-(norm(a.code)===q)).slice(0,40);
-  el.innerHTML=list.length?list.map(prodLi).join(''):'<div class="empty small">Aucun article trouvé</div>';el.hidden=false}
+  const pks=(typeof packsAll==='function'?packsAll():[]).filter(pk=>norm(pk.name).includes(q)).slice(0,6);
+  el.innerHTML=pks.length||list.length?pks.map(packLi).join('')+list.map(prodLi).join(''):'<div class="empty small">Aucun article ni forfait trouvé</div>';el.hidden=false}
 const prodLi=p=>`<button class="li" type="button" data-act="fPick" data-code="${esc(p.code)}"><span class="mono">${esc(p.code)}</span><b>${esc(p.name)}</b><span class="spacer"></span><span class="mono">${p.price>0?fmt(p.price):'prix ?'}</span></button>`;
 function fBrowse(cat){const el=$('#fSugg');if(!el)return;const d=derive();fBrowseCat=cat||'';
   if(!fBrowseCat){const counts={};d.prods.forEach(p=>{const k=catsOf(p);counts[k]=(counts[k]||0)+1});const keys=CATS.map(x=>x.k).filter(k=>counts[k]);
@@ -2998,6 +2999,14 @@ const savePacks=l=>put('settings','main',{...(S.settings.main||{}),packs:l});
 function packLines(pk){return(pk.lines||[]).map(x=>{const p=S.products[x.code];return p?{p,qty:+x.qty||1}:null}).filter(Boolean)}
 const packSum=pk=>r3(packLines(pk).reduce((s,x)=>s+(+x.p.price||0)*x.qty,0));
 const packPrice=pk=>pk.price>0?+pk.price:packSum(pk);
+function packToLines(pk){const L=packLines(pk);if(!L.length)return null;
+  const added=L.map(({p,qty})=>({code:p.code,name:p.name,price:+p.price||0,qty,disc:0,cost:p.cost??null,cat:p.cat||'',type:p.type||'produit'}));
+  const diff=r3(packPrice(pk)-packSum(pk));if(Math.abs(diff)>0.0005){let i=added.findIndex(l=>l.type==='service'||l.cat==='services');if(i<0)i=added.length-1;const l=added[i];l.price=r3(Math.max(0,l.price+diff/(l.qty||1)))}return added}
+const packLi=pk=>`<button class="li" type="button" data-act="fPack" data-id="${esc(pk.id)}"><span class="mono">⚡</span><b>${esc(pk.name)}</b><span class="small muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${esc(packLines(pk).map(({p,qty})=>(qty!==1?qty+' × ':'')+p.name).join(' + '))}</span><span class="spacer"></span><span class="mono">${fmt(packPrice(pk))}</span></button>`;
+function fPacks(){const el=$('#fSugg');if(!el)return;const L=packsAll();fBrowseCat='';
+  el.innerHTML=`<div class="shead"><b>Choisir un forfait</b><span class="spacer"></span><button class="btn sm" type="button" data-act="fBrowseClose">Fermer</button></div>`+(L.length?L.map(packLi).join(''):'<div class="empty small">Aucun forfait. Créez-les dans Articles → ⚡ Forfaits.</div>');el.hidden=false;el.scrollTop=0}
+function fAddPack(id){const pk=packsAll().find(x=>x.id===id);if(!pk)return;const added=packToLines(pk);if(!added)return toast('Ce forfait ne contient aucun article valide');readFiche();
+  added.forEach(l=>{const ex=fd.lines.find(x=>x.code===l.code&&x.price===l.price);if(ex)ex.qty=r3(ex.qty+l.qty);else fd.lines.push(l)});const i=$('#fAdd');if(i)i.value='';const sg=$('#fSugg');if(sg)sg.hidden=true;renderFLines();toast('Forfait « '+pk.name+' » ajouté au devis : '+fmt(packPrice(pk))+' DT')}
 function addPack(id){const pk=packsAll().find(x=>x.id===id);if(!pk)return;const L=packLines(pk);if(!L.length)return toast('Ce forfait ne contient aucun article valide');
   const added=L.map(({p,qty})=>({code:p.code,name:p.name,price:+p.price||0,qty,disc:0,cost:p.cost??null,cat:p.cat||'',type:p.type||'produit'}));
   const diff=r3(packPrice(pk)-packSum(pk));if(Math.abs(diff)>0.0005){let i=added.findIndex(l=>l.type==='service'||l.cat==='services');if(i<0)i=added.length-1;const l=added[i];l.price=r3(Math.max(0,l.price+diff/(l.qty||1)))}
@@ -3191,7 +3200,7 @@ const A={
  dlReceipt:e=>{const t=S.tickets[e.dataset.id];download('ticket-'+t.date+'-'+t.num+'.html',docShell('Ticket '+t.num,`<div class="receipt">${receiptBody(t)}</div>`),'text/html')},
  voidTicket:e=>{const id=e.dataset.id;ask('Annuler ce ticket ? Le stock des articles sera remis.','Annuler le ticket',()=>{const t=S.tickets[id];put('tickets',id,{...t,voided:true,voidedAt:Date.now()});consOnTicket(t,true);trOnTicket(t,true);if(!t.v)t.lines.forEach(l=>{const p=S.products[l.code];if(p&&p.stock!=null&&p.stock!=='')put('products',p.code,{...S.products[l.code],stock:r3(S.products[l.code].stock+l.qty)})});
    if(t.kind!=='acompte'&&t.devisId&&(S.orders||{})[t.devisId])put('orders',t.devisId,{...S.orders[t.devisId],status:'recu',ticketId:'',updated:Date.now()});if(t.kind!=='acompte'&&t.devisId&&S.devis[t.devisId])put('devis',t.devisId,{...S.devis[t.devisId],paid:false,status:'pret',ticketId:''});(t.kind!=='acompte'?(t.lotIds||[]):[]).forEach(i=>{if(S.devis[i]&&S.devis[i].ticketId===t.id)put('devis',i,{...S.devis[i],paid:false,status:'pret',ticketId:''})});if(!t.v&&t.reward&&S.clients[t.clientCode])put('clients',t.clientCode,{...S.clients[t.clientCode],rewardsUsed:Math.max(0,(S.clients[t.clientCode].rewardsUsed||0)-1)});closeModal();toast('Ticket annulé')})},
- newFiche:()=>ficheModal(),
+ newFiche:()=>ficheModal(),fPacks:()=>fPacks(),fPack:e=>fAddPack(e.dataset.id),
  dgNew:()=>dgNewModal(),dgN:e=>{dgRead();const n=+e.dataset.n;while(dgRows.length<n)dgRows.push(dgEmpty());if(dgRows.length>n)dgRows=dgRows.slice(0,n);dgRender()},dgAdd:()=>{dgRead();dgRows.push(dgEmpty());dgRender()},dgDel:e=>{dgRead();dgRows.splice(+e.dataset.i,1);dgRender()},
  dgCopy:()=>{dgRead();const q=dgRows[0]&&dgRows[0].request;if(!q)return toast('Écrivez d’abord la demande du vélo 1');dgRows.forEach(r=>{if(!r.request)r.request=q});dgRender()},dgSave:()=>dgSave(),
  dgCliPick:e=>{const c=S.clients[e.dataset.code];if(!c)return;dgCli={code:c.code,name:c.name,phone:c.phone||''};$('#dgName').value=c.name;$('#dgPhone').value=c.phone||'';$('#dgSugg').hidden=true;dgInfo()},
