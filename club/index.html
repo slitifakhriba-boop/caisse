@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1b2d">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Club vélo">
+<title>Club Sport Plus Aventure</title>
+<style>[hidden]{display:none!important}
+:root{--bg:#eef2f7;--panel:#fff;--panel2:#f4f7fb;--line:#dde4ee;--fg:#122033;--muted:#5d6b80;--accent:#1f6fe5;--accent2:#3fb0ff;--accent-soft:#e3eeff;--amber:#f59e0b;--amber-soft:#fff3d6;--ok:#15803d;--ok-soft:#dcf5e5;--bad:#c62828;--bad-soft:#fde4e4;--warn:#b45309;--warn-soft:#fff1d6;--nav:#0f1b2d;--r:10px;
+ --font:"Barlow","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1320;--panel:#121d2e;--panel2:#18263a;--line:#26364d;--fg:#e8eef7;--muted:#9aabc2;--accent:#4b93ff;--accent2:#5cc0ff;--accent-soft:#16294a;--amber-soft:#3a2a0c;--ok:#4ade80;--ok-soft:#123222;--bad:#f87171;--bad-soft:#3b1717;--warn:#fbbf24;--warn-soft:#3a2a0c}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--font);-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+header.top{position:sticky;top:0;z-index:20;background:var(--nav);color:#fff;display:flex;align-items:center;gap:14px;padding:8px 16px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.brand{display:flex;align-items:center;gap:10px;flex:0 0 auto;text-decoration:none;color:#fff}
+.brand .lg{width:54px;height:38px;display:grid;place-items:center}
+.brand .lg svg,.brand .lg img{width:100%;height:100%;object-fit:contain}
+.brand b{display:block;font-size:17px;letter-spacing:.02em;line-height:1.1;text-transform:uppercase}
+.brand span{display:block;font-size:11px;color:#9fb3cc;letter-spacing:.08em;text-transform:uppercase}
+nav.main{display:flex;gap:2px;overflow-x:auto;flex:1 1 auto;scrollbar-width:none}
+nav.main::-webkit-scrollbar{display:none}
+nav.main a{color:#c9d6e8;text-decoration:none;font-weight:600;font-size:14px;padding:9px 12px;border-radius:8px;white-space:nowrap}
+nav.main a:hover{background:rgba(255,255,255,.08);color:#fff}
+nav.main a[aria-current="page"]{background:rgba(63,176,255,.18);color:#fff;box-shadow:inset 0 -2px 0 var(--accent2)}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 90px}
+h1{font-size:26px;margin:0;letter-spacing:.01em}
+h2{font-size:19px;margin:0}
+h3{font-size:13px;margin:0;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1 1 auto}
+.stack{display:flex;flex-direction:column;gap:14px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.grid2>*{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.muted{color:var(--muted)}.small{font-size:13px}.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:9px 14px;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.danger{color:var(--bad);border-color:var(--bad);background:none}
+.btn.ghost{background:none;border-color:transparent}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--panel2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.chip.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.acc{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:2px;text-decoration:none;color:inherit}
+.kpi .k{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kpi .v{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.hl{background:var(--nav);color:#fff;border-color:var(--nav)}.kpi.hl .k,.kpi.hl .s{color:#9fb3cc}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--panel2);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--panel2)}
+.f,select.f,textarea.f{width:100%;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.f:focus,select:focus,textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:0}
+label.fl{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:0}
+label.fl input,label.fl select,label.fl textarea{width:100%;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:15px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--fg)}
+label.ck{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+label.ck input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
+.fg{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.fg .w2{grid-column:span 2}
+@media (max-width:520px){.fg .w2{grid-column:auto}}
+fieldset{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px 14px;margin:0;display:flex;flex-direction:column;gap:12px;min-width:0}
+legend{font-weight:700;font-size:14px;padding:0 6px}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:26px;text-align:center;color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:none;color:var(--muted);font-weight:600;font-size:14px;padding:7px 12px;border-radius:8px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--panel);color:var(--fg);border-color:var(--accent)}
+.av{width:42px;height:42px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;flex:0 0 auto;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.av.lg{width:96px;height:96px;font-size:30px}
+.who{display:flex;gap:10px;align-items:center;min-width:0}
+.who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit;cursor:pointer;text-align:left;min-width:0}
+.card:hover{border-color:var(--accent)}
+.trace{background:var(--panel2);border-radius:8px;display:block;width:100%}
+.alert{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--warn-soft);border:1px solid transparent;font-size:14px}
+.alert.bad{background:var(--bad-soft)}
+.alert.info{background:var(--accent-soft)}
+.act-date{width:54px;flex:0 0 auto;text-align:center;border-radius:8px;background:var(--accent-soft);color:var(--accent);padding:4px 0;line-height:1.1}
+.act-date b{display:block;font-size:20px}
+.act-date span{font-size:11px;text-transform:uppercase;font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-right:1px solid var(--line);background:var(--panel);padding:6px 11px;font-weight:700;cursor:pointer;color:var(--muted)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px}
+.badge{display:flex;flex-direction:column;align-items:center;gap:4px;width:92px;text-align:center;font-size:12px;font-weight:600}
+.badge .md{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:linear-gradient(135deg,#ffd25a,#ff9f1c);box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.badge.off{opacity:.35;filter:grayscale(1)}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.li{display:flex;gap:10px;align-items:center;padding:10px 12px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;width:100%;cursor:pointer;color:inherit;text-decoration:none}
+.li:last-child{border-bottom:0}.li:hover{background:var(--panel2)}
+/* fenêtre */
+#ov{position:fixed;inset:0;background:rgba(8,14,24,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:4vh 12px;overflow-y:auto}
+#ov[hidden]{display:none}
+.sheet{background:var(--panel);border-radius:14px;width:100%;max-width:640px;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35);margin-bottom:4vh}
+.sheet.wide{max-width:920px}
+.sh-h{display:flex;align-items:flex-start;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.sh-h h2{font-size:20px}
+.sh-b{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.sh-f{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;border-top:1px solid var(--line);background:var(--panel2);border-radius:0 0 14px 14px}
+.x{margin-left:auto;border:0;background:none;font-size:26px;line-height:1;cursor:pointer;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111c2c;color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:calc(100% - 24px)}
+#toast[hidden]{display:none}
+.hint{font-size:13px;color:var(--muted)}
+@media (max-width:700px){header.top{flex-wrap:wrap;padding:8px 10px}nav.main{order:3;flex-basis:100%}main{padding:14px 12px 90px}h1{font-size:22px}.kpi .v{font-size:23px}}
+@media print{header.top,#toast{display:none}}
+</style>
+</head>
+<body>
+<header class="top"><a class="brand" href="#accueil"><span class="lg" id="bLogo"></span><span><b id="bName">Club</b><span id="bTag"></span></span></a>
+<nav class="main" aria-label="Menu"><a href="#accueil" data-p="accueil">Accueil</a><a href="#adherents" data-p="adherents">Adhérents</a><a href="#abonnements" data-p="abonnements">Abonnements</a><a href="#activites" data-p="activites">Activités</a><a href="#circuits" data-p="circuits">Circuits</a><a href="#progression" data-p="progression">Progression</a><a href="#reglages" data-p="reglages">Réglages</a></nav></header>
+<main id="app"></main>
+<div id="ov" hidden></div><div id="toast" hidden role="status"></div>
+<script>
+const LOGO_SVG='<svg role="img" aria-label="Logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 330"><defs><linearGradient id="em1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fa2ff"/><stop offset=".75" stop-color="#1650c8" stop-opacity=".55"/><stop offset="1" stop-color="#1650c8" stop-opacity="0"/></linearGradient>\n<linearGradient id="erl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1f6fe5"/><stop offset=".5" stop-color="#7fd3ff"/><stop offset="1" stop-color="#1f6fe5"/></linearGradient>\n<linearGradient id="ebk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5cc8ff"/><stop offset="1" stop-color="#2b7dff"/></linearGradient>\n<linearGradient id="ebk2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a8e2ff"/><stop offset="1" stop-color="#5aa9ff"/></linearGradient>\n<linearGradient id="esun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd25a"/><stop offset="1" stop-color="#ff9f1c"/></linearGradient>\n<linearGradient id="etx" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1f6fe5"/><stop offset="1" stop-color="#3fb0ff"/></linearGradient></defs><g transform="translate(60 10)"><mask id="ek1" maskUnits="userSpaceOnUse" x="-60" y="-60" width="560" height="420"><rect x="-60" y="-60" width="560" height="420" fill="#fff"/><g transform="translate(-78 80) scale(.66)"><circle cx="140" cy="236" r="44" fill="none" stroke="#000" stroke-width="29" stroke-linecap="round" stroke-linejoin="round"/><circle cx="296" cy="236" r="44" fill="none" stroke="#000" stroke-width="29" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M140 236 L194 236 L262 184 L178 184 Z" fill="none" stroke="#000" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/><path d="M296 236 L270 170 L288 164" fill="none" stroke="#000" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M178 184 L170 164 M158 162 L186 162" fill="none" stroke="#000" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/><circle cx="268" cy="112" r="18" fill="#000" stroke="#000" stroke-width="18"/>\n<path d="M252 132 L176 160" fill="none" stroke="#000" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/><path d="M250 136 L284 164" fill="none" stroke="#000" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M182 160 L226 196 L204 240" fill="none" stroke="#000" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/><path d="M180 164 L196 204 L176 236" fill="none" stroke="#000" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/></g><circle cx="140" cy="236" r="44" fill="none" stroke="#000" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/><circle cx="296" cy="236" r="44" fill="none" stroke="#000" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M140 236 L194 236 L262 184 L178 184 Z" fill="none" stroke="#000" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M296 236 L270 170 L288 164" fill="none" stroke="#000" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M178 184 L170 164 M158 162 L186 162" fill="none" stroke="#000" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><circle cx="268" cy="112" r="18" fill="#000" stroke="#000" stroke-width="14"/>\n<path d="M252 132 L176 160" fill="none" stroke="#000" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/><path d="M250 136 L284 164" fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M182 160 L226 196 L204 240" fill="none" stroke="#000" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><path d="M180 164 L196 204 L176 236" fill="none" stroke="#000" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/></mask>\n<mask id="ek2" maskUnits="userSpaceOnUse" x="-60" y="-60" width="560" height="420"><rect x="-60" y="-60" width="560" height="420" fill="#fff"/><circle cx="140" cy="236" r="44" fill="none" stroke="#000" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/><circle cx="296" cy="236" r="44" fill="none" stroke="#000" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M140 236 L194 236 L262 184 L178 184 Z" fill="none" stroke="#000" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M296 236 L270 170 L288 164" fill="none" stroke="#000" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M178 184 L170 164 M158 162 L186 162" fill="none" stroke="#000" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><circle cx="268" cy="112" r="18" fill="#000" stroke="#000" stroke-width="14"/>\n<path d="M252 132 L176 160" fill="none" stroke="#000" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/><path d="M250 136 L284 164" fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M182 160 L226 196 L204 240" fill="none" stroke="#000" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><path d="M180 164 L196 204 L176 236" fill="none" stroke="#000" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/></mask>\n<g mask="url(#ek1)">\n <path d="M318.0 36.0 L320.2 28.1 L323.5 28.3 L324.4 36.5 L327.1 37.1 L331.2 29.9 L334.3 31.0 L333.2 39.2 L335.7 40.4 L341.3 34.3 L344.1 36.1 L341.1 43.8 L343.2 45.6 L350.1 41.1 L352.4 43.5 L347.6 50.2 L349.3 52.4 L357.1 49.7 L358.7 52.6 L352.5 58.0 L353.5 60.5 L361.7 59.8 L362.7 63.0 L355.3 66.7 L355.7 69.4 L363.9 70.7 L364.0 74.0 L356.0 75.8 L355.7 78.6 L363.3 81.7 L362.7 85.0 L354.4 84.9 L353.5 87.5 L360.2 92.4 L358.7 95.4 L350.8 93.3 L349.3 95.6 L354.6 101.9 L352.4 104.5 L345.2 100.5 L343.2 102.4 L346.8 109.9 L344.1 111.9 L338.1 106.3 L335.7 107.6 L337.4 115.7 L334.3 117.0 L329.7 110.1 L327.1 110.9 L326.8 119.1 L323.5 119.7 L320.8 111.9 L318.0 112.0 L315.8 119.9 L312.5 119.7 L311.6 111.5 L308.9 110.9 L304.8 118.1 L301.7 117.0 L302.8 108.8 L300.3 107.6 L294.7 113.7 L291.9 111.9 L294.9 104.2 L292.8 102.4 L285.9 106.9 L283.6 104.5 L288.4 97.8 L286.7 95.6 L278.9 98.3 L277.3 95.4 L283.5 90.0 L282.5 87.5 L274.3 88.2 L273.3 85.0 L280.7 81.3 L280.3 78.6 L272.1 77.3 L272.0 74.0 L280.0 72.2 L280.3 69.4 L272.7 66.3 L273.3 63.0 L281.6 63.1 L282.5 60.5 L275.8 55.6 L277.3 52.6 L285.2 54.7 L286.7 52.4 L281.4 46.1 L283.6 43.5 L290.8 47.5 L292.8 45.6 L289.2 38.1 L291.9 36.1 L297.9 41.7 L300.3 40.4 L298.6 32.3 L301.7 31.0 L306.3 37.9 L308.9 37.1 L309.2 28.9 L312.5 28.3 L315.2 36.1Z M347.0 74.0 A29 29 0 1 0 289.0 74.0 A29 29 0 1 0 347.0 74.0Z" fill="url(#esun)" fill-rule="evenodd"/><path d="M318.0 74.0 L318.0 42.0" stroke="url(#esun)" stroke-width="9" stroke-linecap="round"/><path d="M318.0 74.0 L348.4 64.1" stroke="url(#esun)" stroke-width="9" stroke-linecap="round"/><path d="M318.0 74.0 L336.8 99.9" stroke="url(#esun)" stroke-width="9" stroke-linecap="round"/><path d="M318.0 74.0 L299.2 99.9" stroke="url(#esun)" stroke-width="9" stroke-linecap="round"/><path d="M318.0 74.0 L287.6 64.1" stroke="url(#esun)" stroke-width="9" stroke-linecap="round"/><circle cx="318" cy="74" r="12.0" fill="url(#esun)"/><circle cx="318" cy="74" r="4.6" fill="#000" fill-opacity="0"/>\n <path d="M8 262 L118 120 L150 156 L216 36 L294 168 L322 136 L396 262 Z" fill="url(#em1)"/>\n <path d="M8 262 L118 120 L150 156 L216 36 L294 168 L322 136 L396 262" fill="none" stroke="url(#erl)" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>\n <path d="M216 36 L244 84 L228 78 L216 92 L204 76 L190 82 Z" fill="#eaf8ff"/>\n <path d="M118 120 L136 140 L124 136 L114 144 L106 135 Z" fill="#eaf8ff"/>\n</g>\n<g mask="url(#ek2)"><g transform="translate(-78 80) scale(.66)"><circle cx="140" cy="236" r="44" fill="none" stroke="url(#ebk2)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><circle cx="296" cy="236" r="44" fill="none" stroke="url(#ebk2)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M140 236 L194 236 L262 184 L178 184 Z" fill="none" stroke="url(#ebk2)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M296 236 L270 170 L288 164" fill="none" stroke="url(#ebk2)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M178 184 L170 164 M158 162 L186 162" fill="none" stroke="url(#ebk2)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="268" cy="112" r="18" fill="url(#ebk2)"/>\n<path d="M252 132 L176 160" fill="none" stroke="url(#ebk2)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/><path d="M250 136 L284 164" fill="none" stroke="url(#ebk2)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M182 160 L226 196 L204 240" fill="none" stroke="url(#ebk2)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><path d="M180 164 L196 204 L176 236" fill="none" stroke="url(#ebk2)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/></g></g>\n<circle cx="140" cy="236" r="44" fill="none" stroke="url(#ebk)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><circle cx="296" cy="236" r="44" fill="none" stroke="url(#ebk)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M140 236 L194 236 L262 184 L178 184 Z" fill="none" stroke="url(#ebk)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M296 236 L270 170 L288 164" fill="none" stroke="url(#ebk)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M178 184 L170 164 M158 162 L186 162" fill="none" stroke="url(#ebk)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="268" cy="112" r="18" fill="url(#ebk)"/>\n<path d="M252 132 L176 160" fill="none" stroke="url(#ebk)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/><path d="M250 136 L284 164" fill="none" stroke="url(#ebk)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M182 160 L226 196 L204 240" fill="none" stroke="url(#ebk)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><path d="M180 164 L196 204 L176 236" fill="none" stroke="url(#ebk)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/></g></svg>';
+/* ================= OUTILS ================= */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=p=>(p||'')+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>{const x=d instanceof Date?d:new Date(d);return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate())};
+const today=()=>iso(new Date());
+const dt=s=>new Date(s+'T12:00:00');
+const frD=s=>s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'';
+const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const MOISL=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const JOURS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const frLong=s=>{if(!s)return'';const d=dt(s);return JOURS[d.getDay()]+' '+d.getDate()+' '+MOISL[d.getMonth()]+' '+d.getFullYear()};
+const addDays=(s,n)=>{const d=dt(s);d.setDate(d.getDate()+n);return iso(d)};
+const addMonths=(s,n)=>{const d=dt(s);const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));d.setDate(d.getDate()-1);return iso(d)};
+const daysTo=(a,b)=>Math.round((dt(b)-dt(a))/864e5);
+const pnum=v=>{const n=parseFloat(String(v??'').replace(/\s/g,'').replace(',','.'));return isNaN(n)?null:n};
+const fmt=n=>(+n||0).toLocaleString('fr-FR',{minimumFractionDigits:3,maximumFractionDigits:3});
+const km1=n=>(Math.round((+n||0)*10)/10).toLocaleString('fr-FR');
+const int=n=>Math.round(+n||0).toLocaleString('fr-FR');
+const ageOf=b=>{if(!b)return null;const d=dt(b),t=new Date();let a=t.getFullYear()-d.getFullYear();if(t.getMonth()<d.getMonth()||(t.getMonth()===d.getMonth()&&t.getDate()<d.getDate()))a--;return a};
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const getP=(o,k)=>k.split('.').reduce((x,p)=>x==null?undefined:x[p],o);
+const setP=(o,k,v)=>{const ps=k.split('.');let x=o;ps.slice(0,-1).forEach(p=>{if(x[p]==null||typeof x[p]!=='object')x[p]={};x=x[p]});x[ps[ps.length-1]]=v};
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+let toastT=0;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,3200)}
+
+/* ================= DONNÉES (enregistrées sur cet appareil) ================= */
+const COLS=['members','subs','acts','circuits','evals','settings'];
+const DB={};COLS.forEach(c=>DB[c]={});
+let idb=null;const dirty=new Set();let saveT=0;
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('club-spa',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function save(col){dirty.add(col);clearTimeout(saveT);saveT=setTimeout(flush,150)}
+function flush(){clearTimeout(saveT);if(!dirty.size)return;const cols=[...dirty];dirty.clear();
+  if(idb){try{const tx=idb.transaction('kv','readwrite');const st=tx.objectStore('kv');cols.forEach(c=>st.put(DB[c],c));tx.onerror=()=>toast('Enregistrement impossible : espace insuffisant ?');return}catch(e){console.error(e)}}
+  cols.forEach(c=>lsSet('club-'+c,JSON.stringify(DB[c])))}
+addEventListener('pagehide',flush);document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
+async function loadAll(){try{idb=await idbOpen();await Promise.all(COLS.map(c=>new Promise(res=>{const r=idb.transaction('kv').objectStore('kv').get(c);r.onsuccess=()=>{if(r.result)DB[c]=r.result;res()};r.onerror=res})));
+    try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}}
+  catch(e){console.error(e);idb=null;COLS.forEach(c=>{try{const v=JSON.parse(lsGet('club-'+c)||'null');if(v)DB[c]=v}catch(e){}});toast('Stockage limité sur ce navigateur : faites des sauvegardes régulières')}}
+function put(col,o){o.updated=Date.now();DB[col][o.id]=o;save(col);return o}
+function del(col,id){delete DB[col][id];save(col)}
+const all=col=>Object.values(DB[col]);
+
+/* ================= RÉGLAGES ================= */
+const DEF={club:'Club Sport Plus Aventure',tagline:'Vélo · Aventure · Partage',city:'',phone:'',email:'',address:'',logo:'',certMonths:12,
+  plans:[{id:'p1',name:'Mensuel',kind:'mois',months:1,price:30},{id:'p2',name:'Trimestriel',kind:'mois',months:3,price:80},{id:'p3',name:'Annuel',kind:'mois',months:12,price:250},{id:'p4',name:'Carnet 10 sorties',kind:'seances',sessions:10,months:6,price:60}],
+  levels:['Débutant','Intermédiaire','Confirmé','Expert'],groups:['Loisir','Sportif','Jeunes']};
+const cfg=()=>({...DEF,...(DB.settings.main||{})});
+const setCfg=o=>put('settings',{...(DB.settings.main||{}),...o,id:'main'});
+const ATYPES={sortie:['Sortie','#1f6fe5'],entrainement:['Entraînement','#7c3aed'],formation:['Formation / atelier','#0f766e'],evenement:['Événement convivial','#f59e0b'],course:['Course / défi','#c62828']};
+const CTYPES=['Route','VTT','Gravel','Urbain','Mixte'];
+const DIFF=['','Facile','Moyen','Difficile','Très difficile'];
+const DIFFC=['','ok','acc','warn','bad'];
+const SKILLS=[['endurance','Endurance'],['technique','Technique de pilotage'],['mecanique','Mécanique de base'],['securite','Sécurité et code de la route'],['groupe','Rouler en groupe / entraide']];
+const METHODS={especes:'Espèces',carte:'Carte',virement:'Virement',cheque:'Chèque'};
+
+/* ================= RÈGLES MÉTIER ================= */
+const mName=m=>m?((m.firstName||'')+' '+(m.lastName||'')).trim()||'Sans nom':'Adhérent supprimé';
+const mInit=m=>(((m.firstName||'').trim()[0]||'')+((m.lastName||'').trim()[0]||'')).toUpperCase()||'?';
+const avatar=(m,cls='')=>`<span class="av ${cls}">${m&&m.photo?`<img src="${m.photo}" alt="">`:esc(m?mInit(m):'?')}</span>`;
+const members=(withArch)=>all('members').filter(m=>withArch||!m.archived).sort((a,b)=>mName(a).localeCompare(mName(b),'fr'));
+const subsOf=id=>all('subs').filter(s=>s.memberId===id).sort((a,b)=>(b.start||'').localeCompare(a.start||''));
+const actKm=a=>{const c=a.circuitId&&DB.circuits[a.circuitId];return pnum(a.km)??(c?+c.km:0)};
+const actDplus=a=>{const c=a.circuitId&&DB.circuits[a.circuitId];return pnum(a.dplus)??(c?+c.dplus:0)};
+const partKm=(a,p)=>pnum(p.km)??actKm(a);
+const done=a=>a.status!=='annulee'&&a.date<=today();
+function presOf(id){return all('acts').filter(a=>done(a)&&(a.parts||[]).some(p=>p.memberId===id&&p.present)).sort((a,b)=>b.date.localeCompare(a.date))}
+function usedSessions(s){return presOf(s.memberId).filter(a=>a.date>=s.start&&a.date<=s.end).length}
+function subState(s){const t=today();if(s.start>t)return'futur';if(s.end<t)return'fini';if(s.sessions&&usedSessions(s)>=s.sessions)return'fini';return'actif'}
+function mState(m){const L=subsOf(m.id);const a=L.find(s=>subState(s)==='actif');if(a)return{k:'actif',s:a,days:daysTo(today(),a.end),left:a.sessions?a.sessions-usedSessions(a):null};
+  const f=L.find(s=>subState(s)==='futur');if(f)return{k:'futur',s:f};const e=L.find(s=>subState(s)==='fini');return e?{k:'expire',s:e,since:daysTo(e.end,today())}:{k:'aucun'}}
+function stChip(m){const s=mState(m);if(s.k==='actif'){const soon=s.days<=15||(s.left!=null&&s.left<=2);return`<span class="chip ${soon?'warn':'ok'}">${soon?(s.left!=null&&s.left<=2?s.left+' séance(s) restante(s)':'Expire dans '+s.days+' j'):'À jour'}</span>`}
+  if(s.k==='futur')return`<span class="chip acc">Commence le ${frD(s.s.start)}</span>`;if(s.k==='expire')return`<span class="chip bad">Expiré</span>`;return`<span class="chip">Sans abonnement</span>`}
+const certEnd=m=>m.certDate?addMonths(m.certDate,+cfg().certMonths||12):'';
+const certOk=m=>!!m.certDate&&certEnd(m)>=today();
+function certChip(m){if(!m.certDate)return'<span class="chip warn">Certificat manquant</span>';return certOk(m)?(daysTo(today(),certEnd(m))<=30?`<span class="chip warn">Certificat jusqu’au ${frD(certEnd(m))}</span>`:''):'<span class="chip bad">Certificat expiré</span>'}
+function mStats(id,from,to){const L=presOf(id).filter(a=>(!from||a.date>=from)&&(!to||a.date<=to));let km=0,dp=0;L.forEach(a=>{const p=a.parts.find(x=>x.memberId===id);km+=partKm(a,p)||0;dp+=actDplus(a)||0});return{n:L.length,km,dp,list:L}}
+function nextNum(prefix,col,field){const y=today().slice(0,4);const used=new Set(all(col).map(x=>x[field]));let n=all(col).filter(x=>String(x[field]||'').startsWith(prefix+(prefix==='R'?y+'-':''))).length+1,v;do{v=prefix==='R'?'R'+y+'-'+String(n++).padStart(3,'0'):prefix+String(n++).padStart(3,'0')}while(used.has(v));return v}
+const BADGES=[['🚲','Première sortie',s=>s.n>=1],['🔟','10 sorties',s=>s.n>=10],['🏅','25 sorties',s=>s.n>=25],['🏆','50 sorties',s=>s.n>=50],['💯','100 km',s=>s.km>=100],['⭐','500 km',s=>s.km>=500],['🌟','1 000 km',s=>s.km>=1000],['🚀','2 500 km',s=>s.km>=2500],['⛰️','5 000 m D+',s=>s.dp>=5000],['🏔️','10 000 m D+',s=>s.dp>=10000],['🤝','1 an au club',(s,m)=>m.joinDate&&daysTo(m.joinDate,today())>=365]];
+
+/* ================= FENÊTRE / NAVIGATION ================= */
+let form=null,formCtx={};
+function openModal(title,sub,body,foot,wide){$('#ov').innerHTML=`<div class="sheet ${wide?'wide':''}" role="dialog" aria-modal="true"><div class="sh-h"><div><h2>${title}</h2>${sub?`<div class="small muted">${sub}</div>`:''}</div><button class="x" data-act="close" aria-label="Fermer">×</button></div><div class="sh-b">${body}</div>${foot?`<div class="sh-f">${foot}</div>`:''}</div>`;$('#ov').hidden=false;document.body.style.overflow='hidden';const f=$('#ov input:not([type=checkbox]):not([type=file]),#ov select');if(f&&innerWidth>700)f.focus()}
+function closeModal(){$('#ov').hidden=true;$('#ov').innerHTML='';document.body.style.overflow='';form=null}
+let confirmCb=null;
+function ask(msg,yes,cb,danger){confirmCb=cb;openModal('Confirmer','',`<p style="margin:0;white-space:pre-line">${esc(msg)}</p>`,`<button class="btn" data-act="close">Annuler</button><span class="spacer"></span><button class="btn ${danger?'danger':'primary'}" data-act="cfYes">${esc(yes)}</button>`)}
+function F(k,label,o={}){const v=getP(form,k);const val=v==null?'':v;const t=o.type||'text';const c=o.cls?` ${o.cls}`:'';
+  if(t==='select')return`<label class="fl${c}">${label}<select data-k="${k}">${o.opts.map(x=>{const[a,b]=Array.isArray(x)?x:[x,x];return`<option value="${esc(a)}" ${String(val)===String(a)?'selected':''}>${esc(b)}</option>`}).join('')}</select></label>`;
+  if(t==='area')return`<label class="fl${c}">${label}<textarea data-k="${k}" rows="${o.rows||3}" placeholder="${esc(o.ph||'')}">${esc(val)}</textarea></label>`;
+  if(t==='check')return`<label class="ck${c}"><input type="checkbox" data-k="${k}" ${val?'checked':''}> <span>${label}</span></label>`;
+  return`<label class="fl${c}">${label}<input data-k="${k}" type="${t}" value="${esc(val)}" placeholder="${esc(o.ph||'')}" ${o.attr||''}></label>`}
+function readForm(){$$('#ov [data-k]').forEach(el=>setP(form,el.dataset.k,el.type==='checkbox'?el.checked:el.value.trim()))}
+const routes={};let route={page:'accueil',id:''};
+function go(h){if(location.hash==='#'+h)render();else location.hash=h}
+function parseHash(){const h=(location.hash||'#accueil').slice(1).split('/');route={page:h[0]||'accueil',id:decodeURIComponent(h[1]||''),sub:h[2]||''}}
+function render(){parseHash();const r=routes[route.page]||routes.accueil;$$('nav.main a').forEach(a=>a.setAttribute('aria-current',a.dataset.p===(r.nav||route.page)?'page':'false'));
+  $('#app').innerHTML=r.html();r.after&&r.after();document.title=(r.title?r.title()+' · ':'')+cfg().club}
+addEventListener('hashchange',()=>{closeModal();render();scrollTo(0,0)});
+function printDoc(html){const f=document.createElement('iframe');f.setAttribute('aria-hidden','true');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);f.srcdoc=html;setTimeout(()=>f.remove(),120000)}
+function download(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000)}
+const waNum=p=>{let d=String(p||'').replace(/\D/g,'');if(d.startsWith('00'))d=d.slice(2);if(d.length===8)d='216'+d;return d.length>=10?d:''};
+function waOpen(phone,text){const n=waNum(phone);if(!n)return toast('Numéro de téléphone manquant ou incorrect');window.open('https://wa.me/'+n+'?text='+encodeURIComponent(text),'_blank')}
+async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Texte copié : collez-le dans le groupe WhatsApp')}catch(e){openModal('Texte à copier','',`<textarea class="f" rows="12" readonly>${esc(t)}</textarea>`,`<span class="spacer"></span><button class="btn primary" data-act="close">Fermer</button>`)}}
+function photoResize(file,max,cb){const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);cb(c.toDataURL('image/jpeg',.82))};img.onerror=()=>{URL.revokeObjectURL(url);toast('Image illisible')};img.src=url}
+
+/* ================= ACCUEIL ================= */
+routes.accueil={title:()=>'Accueil',html(){const c=cfg();const M=members();const t=today();
+  if(!M.length&&!all('acts').length)return`<div class="stack"><h1>Bienvenue</h1><div class="panel"><h2>${esc(c.club)}</h2>
+   <p style="margin:0">Cet outil gère votre club : <b>adhérents et fiches de renseignement</b>, <b>abonnements et paiements</b>, <b>activités</b> (sorties, entraînements, formations, événements), <b>circuits</b> et <b>progression</b> de chaque membre.</p>
+   <p class="muted" style="margin:0">Tout est enregistré sur cet appareil, même sans internet. Pensez à télécharger une sauvegarde de temps en temps (Réglages).</p>
+   <div class="row"><a class="btn primary" href="#adherents/nouveau">+ Premier adhérent</a><button class="btn" data-act="sample">Voir avec des exemples</button><a class="btn ghost" href="#reglages">Réglages du club</a></div></div></div>`;
+  const act=M.filter(m=>mState(m).k==='actif');const soon=M.filter(m=>{const s=mState(m);return s.k==='actif'&&(s.days<=15||(s.left!=null&&s.left<=2))});const exp=M.filter(m=>mState(m).k==='expire'&&mState(m).since<=60);
+  const cert=M.filter(m=>mState(m).k==='actif'&&!certOk(m));const m0=t.slice(0,7);const rec=all('subs').filter(s=>(s.date||s.start||'').startsWith(m0)).reduce((x,s)=>x+(+s.paid||0),0);
+  const up=all('acts').filter(a=>a.date>=t&&a.status!=='annulee').sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).slice(0,4);
+  const stM=all('acts').filter(a=>done(a)&&a.date.startsWith(m0));let kmM=0;stM.forEach(a=>(a.parts||[]).forEach(p=>{if(p.present)kmM+=partKm(a,p)||0}));
+  const watch=[...soon.map(m=>`<a class="li" href="#adherent/${m.id}">${avatar(m)}<span class="who"><b>${esc(mName(m))}</b></span><span class="spacer"></span>${stChip(m)}</a>`),...exp.map(m=>`<a class="li" href="#adherent/${m.id}">${avatar(m)}<span class="who"><b>${esc(mName(m))}</b></span><span class="spacer"></span><span class="chip bad">Expiré le ${frD(mState(m).s.end)}</span></a>`),...cert.map(m=>`<a class="li" href="#adherent/${m.id}">${avatar(m)}<span class="who"><b>${esc(mName(m))}</b></span><span class="spacer"></span>${certChip(m)}</a>`)].join('');
+  const last=lsGet('club-lastBackup');const bk=!last||Date.now()-+last>7*864e5;
+  return`<div class="stack"><div class="row"><h1>${esc(c.club)}</h1><span class="spacer"></span><a class="btn" href="#activites/nouveau">+ Activité</a><a class="btn primary" href="#adherents/nouveau">+ Adhérent</a></div>
+  ${bk?`<div class="alert info"><span>💾</span><span>${last?'Dernière sauvegarde il y a '+Math.floor((Date.now()-+last)/864e5)+' jours.':'Aucune sauvegarde téléchargée pour l’instant.'} Les données sont seulement sur cet appareil.</span><span class="spacer"></span><button class="btn sm" data-act="backup">Télécharger une sauvegarde</button></div>`:''}
+  <div class="kpis"><a class="kpi hl" href="#adherents"><span class="k">Adhérents à jour</span><span class="v">${act.length}</span><span class="s">sur ${M.length} inscrits</span></a>
+   <a class="kpi" href="#abonnements"><span class="k">À renouveler</span><span class="v">${soon.length+exp.length}</span><span class="s">${soon.length} bientôt · ${exp.length} expirés</span></a>
+   <a class="kpi" href="#abonnements/paiements"><span class="k">Cotisations du mois</span><span class="v">${fmt(rec)}</span><span class="s">DT encaissés en ${MOISL[+m0.slice(5)-1]}</span></a>
+   <a class="kpi" href="#progression"><span class="k">Km roulés ce mois</span><span class="v">${int(kmM)}</span><span class="s">${stM.length} activité(s) · tous les membres</span></a></div>
+  <div class="grid2"><div class="panel"><div class="row"><h2>Prochaines activités</h2><span class="spacer"></span><a class="btn sm" href="#activites">Tout voir</a></div>
+    ${up.length?`<div class="list">${up.map(actLi).join('')}</div>`:'<div class="empty">Aucune activité prévue. <a href="#activites/nouveau">Programmer une sortie</a></div>'}</div>
+   <div class="panel"><h2>À surveiller</h2>${watch?`<div class="list">${watch}</div>`:'<div class="empty">Tout est en ordre 👍</div>'}</div></div>
+  ${topBlock(t.slice(0,7)+'-01',t,'Classement du mois')}</div>`}};
+function topBlock(from,to,title){const R=members().map(m=>({m,...mStats(m.id,from,to)})).filter(x=>x.n).sort((a,b)=>b.km-a.km).slice(0,5);if(!R.length)return'';
+  return`<div class="panel"><div class="row"><h2>${title}</h2><span class="spacer"></span><a class="btn sm" href="#progression">Progression</a></div><div class="list">${R.map((x,i)=>`<a class="li" href="#adherent/${x.m.id}"><b class="mono" style="width:22px">${i+1}</b>${avatar(x.m)}<span class="who"><b>${esc(mName(x.m))}</b></span><span class="spacer"></span><span class="small muted">${x.n} sortie(s)</span><b class="mono">${km1(x.km)} km</b></a>`).join('')}</div></div>`}
+
+/* ================= ADHÉRENTS ================= */
+let mQ='',mF='tous';
+routes.adherents={title:()=>'Adhérents',html(){if(route.id==='nouveau'){history.replaceState(null,'','#adherents');setTimeout(()=>memberForm(),0)}const c=cfg();
+  return`<div class="stack"><div class="row"><h1>Adhérents</h1><span class="chip">${members().length}</span><span class="spacer"></span><button class="btn" data-act="blankFiche">🖨 Fiche vierge</button><button class="btn primary" data-act="newMember">+ Nouvel adhérent</button></div>
+  <div class="row"><input class="f" id="mQ" placeholder="Rechercher nom, téléphone, n° d’adhérent…" style="max-width:340px" value="${esc(mQ)}">
+   <div class="tabs">${[['tous','Tous'],['actif','À jour'],['renouv','À renouveler'],['expire','Expirés / sans abonnement'],['cert','Certificat à fournir'],['arch','Archivés']].map(([k,l])=>`<button data-act="mFilter" data-f="${k}" aria-pressed="${mF===k}">${l}</button>`).join('')}</div>
+   <select class="f" id="mLvl" style="max-width:180px"><option value="">Tous niveaux</option>${c.levels.map(l=>`<option ${mLvl===l?'selected':''}>${esc(l)}</option>`).join('')}</select></div>
+  <div id="mList"></div></div>`},after(){const q=$('#mQ');q.addEventListener('input',()=>{mQ=q.value;mListRender()});$('#mLvl').addEventListener('change',e=>{mLvl=e.target.value;mListRender()});mListRender()}};
+let mLvl='';
+function mListRender(){const q=norm(mQ);let L=members(mF==='arch').filter(m=>mF==='arch'?m.archived:true);
+  L=L.filter(m=>!q||norm([mName(m),m.phone,m.num,m.email,m.group,m.city].join(' ')).includes(q)).filter(m=>!mLvl||m.level===mLvl);
+  L=L.filter(m=>{const s=mState(m);if(mF==='actif')return s.k==='actif';if(mF==='renouv')return s.k==='actif'&&(s.days<=15||(s.left!=null&&s.left<=2));if(mF==='expire')return s.k==='expire'||s.k==='aucun';if(mF==='cert')return!certOk(m);return true});
+  $('#mList').innerHTML=L.length?`<div class="tw"><table><thead><tr><th>Adhérent</th><th>N°</th><th>Téléphone</th><th>Niveau</th><th>Abonnement</th><th class="n">Sorties</th><th class="n">Km</th></tr></thead><tbody>${L.map(m=>{const st=mStats(m.id);return`<tr class="click" data-href="#adherent/${m.id}"><td><span class="who">${avatar(m)}<span style="min-width:0"><b>${esc(mName(m))}</b><span class="small muted">${[m.group,ageOf(m.birth)!=null?ageOf(m.birth)+' ans':''].filter(Boolean).join(' · ')}</span></span></span></td><td class="mono">${esc(m.num||'')}</td><td class="mono">${esc(m.phone||'')}</td><td>${esc(m.level||'')}</td><td>${stChip(m)} ${certOk(m)?'':certChip(m)}</td><td class="n">${st.n}</td><td class="n">${km1(st.km)}</td></tr>`}).join('')}</tbody></table></div>`:`<div class="empty">${members(true).length?'Aucun adhérent pour ce filtre.':'Aucun adhérent. Ajoutez le premier avec « + Nouvel adhérent ».'}</div>`}
+
+/* ---- fiche de renseignement (formulaire) ---- */
+function memberForm(id){const src=id&&DB.members[id];const c=cfg();
+  form=src?JSON.parse(JSON.stringify(src)):{id:uid('M'),num:nextNum('A','members','num'),joinDate:today(),level:c.levels[0]||'',group:'',sex:'',bike:{},emergency:{},guardian:{},consentRules:false,consentImage:false};
+  const body=`<div class="row" style="align-items:flex-start;gap:16px"><div style="display:flex;flex-direction:column;gap:6px;align-items:center"><span id="fPhoto">${avatar(form,'lg')}</span><label class="btn sm">📷 Photo<input type="file" accept="image/*" id="photoIn" hidden></label>${form.photo?'<button class="btn sm ghost" data-act="photoDel">Retirer</button>':''}</div>
+   <div class="fg" style="flex:1 1 300px">${F('firstName','Prénom')}${F('lastName','Nom')}${F('num','N° d’adhérent')}${F('joinDate','Date d’adhésion',{type:'date'})}</div></div>
+  <fieldset><legend>Identité et contact</legend><div class="fg">${F('birth','Date de naissance',{type:'date'})}${F('sex','Sexe',{type:'select',opts:[['','—'],['F','Femme'],['H','Homme']]})}${F('cin','N° CIN / passeport')}${F('phone','Téléphone',{type:'tel',attr:'inputmode="tel"'})}${F('email','E-mail',{type:'email'})}${F('city','Ville')}${F('address','Adresse',{cls:'w2'})}${F('job','Profession')}</div></fieldset>
+  <fieldset id="guardBox" ${ageOf(form.birth)!=null&&ageOf(form.birth)<18?'':'hidden'}><legend>Mineur : parent ou tuteur légal</legend><div class="fg">${F('guardian.name','Nom du parent / tuteur')}${F('guardian.phone','Téléphone du parent',{type:'tel'})}</div>${F('guardian.ok','Le parent autorise l’enfant à participer aux activités du club',{type:'check'})}</fieldset>
+  <fieldset><legend>Personne à prévenir en cas d’urgence</legend><div class="fg">${F('emergency.name','Nom')}${F('emergency.relation','Lien (conjoint, parent…)')}${F('emergency.phone','Téléphone',{type:'tel'})}</div></fieldset>
+  <fieldset><legend>Santé</legend><div class="fg">${F('certDate','Date du certificat médical',{type:'date'})}${F('blood','Groupe sanguin',{type:'select',opts:['','A+','A−','B+','B−','AB+','AB−','O+','O−']})}${F('health','Allergies, traitements, remarques',{cls:'w2',ph:'Asthme, allergie aux piqûres…'})}</div><span class="hint">Certificat valable ${c.certMonths} mois (modifiable dans Réglages).</span></fieldset>
+  <fieldset><legend>Vélo et pratique</legend><div class="fg">${F('bike.type','Type de vélo',{type:'select',opts:['',...CTYPES,'VAE','Enfant']})}${F('bike.brand','Marque / modèle')}${F('bike.size','Taille du cadre')}${F('level','Niveau',{type:'select',opts:c.levels})}${F('group','Groupe',{type:'select',opts:['',...c.groups]})}${F('goal','Objectif personnel',{ph:'Ex. faire 50 km, préparer une course…'})}</div>${F('notes','Notes du club',{type:'area',rows:2})}</fieldset>
+  <fieldset><legend>Engagements</legend>${F('consentRules','A lu et accepte le règlement intérieur du club (casque obligatoire, code de la route, respect du groupe)',{type:'check'})}${F('consentImage','Accepte d’être pris en photo / vidéo pour la communication du club',{type:'check'})}</fieldset>`;
+  openModal(src?'Fiche de '+esc(mName(src)):'Nouvel adhérent','Fiche de renseignement',body,`${src?`<button class="btn danger" data-act="archMember">${src.archived?'Réactiver':'Archiver'}</button>`:''}<span class="spacer"></span><button class="btn" data-act="close">Annuler</button><button class="btn primary" data-act="saveMember">Enregistrer</button>`,true);
+  $('#photoIn').addEventListener('change',e=>{const f=e.target.files[0];if(f)photoResize(f,360,d=>{form.photo=d;$('#fPhoto').innerHTML=avatar(form,'lg')})});
+  const b=$('#ov [data-k=birth]');b.addEventListener('change',()=>{const a=ageOf(b.value);$('#guardBox').hidden=!(a!=null&&a<18)})}
+function saveMember(){readForm();if(!form.firstName&&!form.lastName)return toast('Indiquez au moins le prénom ou le nom');
+  if(form.phone&&all('members').some(m=>m.id!==form.id&&m.phone&&m.phone.replace(/\D/g,'')===form.phone.replace(/\D/g,'')))toast('Attention : ce téléphone existe déjà pour un autre adhérent');
+  const isNew=!DB.members[form.id];const m=put('members',form);closeModal();toast(isNew?'Adhérent enregistré':'Fiche mise à jour');
+  if(isNew){go('adherent/'+m.id);setTimeout(()=>ask(mName(m)+' est inscrit. Enregistrer son abonnement maintenant ?','Nouvel abonnement',()=>subForm(m.id)),400)}else render()}
+
+/* ---- page d'un adhérent ---- */
+routes.adherent={nav:'adherents',title:()=>mName(DB.members[route.id]),html(){const m=DB.members[route.id];if(!m)return'<div class="empty">Adhérent introuvable. <a href="#adherents">Retour</a></div>';const c=cfg();
+  const st=mState(m);const S=mStats(m.id);const y=today().slice(0,4);const SY=mStats(m.id,y+'-01-01');const subs=subsOf(m.id);const ev=all('evals').filter(e=>e.memberId===m.id).sort((a,b)=>b.date.localeCompare(a.date));
+  return`<div class="stack"><div class="row"><a class="btn ghost sm" href="#adherents">← Adhérents</a></div>
+  <div class="panel" style="flex-direction:row;flex-wrap:wrap;gap:16px;align-items:center">${avatar(m,'lg')}<div style="flex:1 1 240px;display:flex;flex-direction:column;gap:6px"><h1>${esc(mName(m))}</h1>
+    <div class="row" style="gap:6px"><span class="chip mono">${esc(m.num||'')}</span>${m.level?`<span class="chip acc">${esc(m.level)}</span>`:''}${m.group?`<span class="chip">${esc(m.group)}</span>`:''}${stChip(m)}${certChip(m)}${m.archived?'<span class="chip bad">Archivé</span>':''}</div>
+    <span class="small muted">${[ageOf(m.birth)!=null?ageOf(m.birth)+' ans':'',m.phone,m.city,m.joinDate?'membre depuis le '+frD(m.joinDate):''].filter(Boolean).map(esc).join(' · ')}</span></div>
+   <div class="row" style="gap:6px"><button class="btn" data-act="editMember" data-id="${m.id}">Modifier la fiche</button><button class="btn" data-act="printFiche" data-id="${m.id}">🖨 Fiche</button><button class="btn" data-act="waMember" data-id="${m.id}">💬 WhatsApp</button><button class="btn primary" data-act="newSub" data-id="${m.id}">+ Abonnement</button></div></div>
+  <div class="kpis"><div class="kpi hl"><span class="k">Sorties</span><span class="v">${S.n}</span><span class="s">${SY.n} en ${y}</span></div><div class="kpi"><span class="k">Kilomètres</span><span class="v">${int(S.km)}</span><span class="s">${int(SY.km)} km en ${y}</span></div><div class="kpi"><span class="k">Dénivelé</span><span class="v">${int(S.dp)}</span><span class="s">mètres de D+</span></div>
+   <div class="kpi"><span class="k">Abonnement</span><span class="v" style="font-size:18px;padding-top:8px">${st.k==='actif'?'Jusqu’au '+frD(st.s.end):st.k==='expire'?'Expiré':st.k==='futur'?'À partir du '+frD(st.s.start):'Aucun'}</span><span class="s">${st.s?esc(st.s.planName)+(st.left!=null?' · '+st.left+' séance(s) restante(s)':''):''}</span></div></div>
+  <div class="grid2"><div class="panel"><div class="row"><h2>Progression</h2><span class="spacer"></span><button class="btn sm primary" data-act="newEval" data-id="${m.id}">+ Évaluation</button></div>
+    ${monthChart(m.id)}
+    ${ev.length?evalView(ev):'<p class="muted small" style="margin:0">Aucune évaluation. Faites le point avec l’adhérent (endurance, technique, mécanique, sécurité, groupe) pour suivre ses progrès.</p>'}
+    ${m.goal?`<div class="alert info"><span>🎯</span><span><b>Objectif :</b> ${esc(m.goal)}</span></div>`:''}
+    <h3>Badges</h3><div class="row" style="gap:6px;align-items:flex-start">${BADGES.map(([i,l,f])=>`<div class="badge ${f(S,m)?'':'off'}"><span class="md">${i}</span>${esc(l)}</div>`).join('')}</div></div>
+   <div class="stack"><div class="panel"><div class="row"><h2>Abonnements</h2></div>${subs.length?`<div class="tw"><table><thead><tr><th>Formule</th><th>Période</th><th class="n">Payé</th><th></th></tr></thead><tbody>${subs.map(s=>{const k=subState(s);return`<tr><td><b>${esc(s.planName)}</b><div class="small muted">${esc(s.num||'')}${s.sessions?' · '+usedSessions(s)+'/'+s.sessions+' séances':''}</div></td><td>${frD(s.start)} → ${frD(s.end)}<div>${k==='actif'?'<span class="chip ok">En cours</span>':k==='futur'?'<span class="chip acc">À venir</span>':'<span class="chip">Terminé</span>'}</div></td><td class="n">${fmt(s.paid)}${+s.paid<+s.price?`<div class="small" style="color:var(--bad)">reste ${fmt(s.price-s.paid)}</div>`:''}</td><td><button class="btn sm" data-act="printRecu" data-id="${s.id}">Reçu</button> <button class="btn sm ghost" data-act="editSub" data-id="${s.id}">✎</button></td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Aucun abonnement.</div>'}</div>
+    <div class="panel"><h2>Informations</h2><div class="tw"><table><tbody>${[['Naissance',m.birth?frD(m.birth)+' ('+ageOf(m.birth)+' ans)':''],['E-mail',m.email],['Adresse',[m.address,m.city].filter(Boolean).join(', ')],['CIN',m.cin],['Urgence',[m.emergency&&m.emergency.name,m.emergency&&m.emergency.relation,m.emergency&&m.emergency.phone].filter(Boolean).join(' · ')],m.guardian&&m.guardian.name?['Parent / tuteur',m.guardian.name+' · '+(m.guardian.phone||'')]:null,['Santé',[m.blood,m.health].filter(Boolean).join(' · ')],['Certificat médical',m.certDate?frD(m.certDate)+' → '+frD(certEnd(m)):'À fournir'],['Vélo',[m.bike&&m.bike.type,m.bike&&m.bike.brand,m.bike&&m.bike.size?'taille '+m.bike.size:''].filter(Boolean).join(' · ')],['Règlement accepté',m.consentRules?'Oui':'Non'],['Droit à l’image',m.consentImage?'Oui':'Non'],['Notes',m.notes]].filter(x=>x&&x[1]).map(([a,b])=>`<tr><th style="width:38%">${a}</th><td>${esc(b)}</td></tr>`).join('')}</tbody></table></div></div></div></div>
+  <div class="panel"><h2>Historique des activités</h2>${S.list.length?`<div class="list">${S.list.slice(0,30).map(a=>{const p=a.parts.find(x=>x.memberId===m.id);return`<a class="li" href="#activite/${a.id}">${dateBox(a.date)}<span style="min-width:0"><b>${esc(a.title||ATYPES[a.type][0])}</b><span class="small muted" style="display:block">${esc(ATYPES[a.type]?ATYPES[a.type][0]:'')}${a.circuitId&&DB.circuits[a.circuitId]?' · '+esc(DB.circuits[a.circuitId].name):''}${p.note?' · '+esc(p.note):''}</span></span><span class="spacer"></span><b class="mono">${km1(partKm(a,p))} km</b></a>`}).join('')}</div>`:'<div class="empty">Pas encore de participation enregistrée.</div>'}</div></div>`}};
+function monthChart(id){const t=dt(today());const B=[];for(let i=11;i>=0;i--){const d=new Date(t.getFullYear(),t.getMonth()-i,1);const k=d.getFullYear()+'-'+pad(d.getMonth()+1);B.push({k,l:MOIS[d.getMonth()],km:0})}
+  (id?presOf(id):all('acts').filter(done)).forEach(a=>{const b=B.find(x=>a.date.startsWith(x.k));if(!b)return;if(id){b.km+=partKm(a,a.parts.find(p=>p.memberId===id))||0}else(a.parts||[]).forEach(p=>{if(p.present)b.km+=partKm(a,p)||0})});
+  const mx=Math.max(10,...B.map(b=>b.km));const W=600,H=170,bw=W/12;
+  return`<svg viewBox="0 0 ${W} ${H+22}" style="width:100%;height:auto" role="img" aria-label="Kilomètres par mois">${B.map((b,i)=>{const h=Math.round(b.km/mx*(H-22));return`<rect x="${i*bw+6}" y="${H-h}" width="${bw-12}" height="${h}" rx="4" fill="url(#gBar)"><title>${b.l} : ${km1(b.km)} km</title></rect>${b.km?`<text x="${i*bw+bw/2}" y="${H-h-5}" text-anchor="middle" font-size="12" fill="currentColor" style="font-family:var(--mono)">${Math.round(b.km)}</text>`:''}<text x="${i*bw+bw/2}" y="${H+16}" text-anchor="middle" font-size="12" fill="var(--muted)">${b.l}</text>`}).join('')}<defs><linearGradient id="gBar" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#1f6fe5"/><stop offset="1" stop-color="#3fb0ff"/></linearGradient></defs></svg><span class="hint">Kilomètres par mois (12 derniers mois)</span>`}
+function evalView(ev){const e=ev[0],p=ev[1];return`<h3>Dernière évaluation · ${frD(e.date)}${e.by?' · par '+esc(e.by):''}</h3><div class="stack" style="gap:8px">${SKILLS.map(([k,l])=>{const v=+(e.scores||{})[k]||0,pv=p?+(p.scores||{})[k]||0:0;const d=p&&pv?v-pv:0;return`<div><div class="row small" style="justify-content:space-between"><span>${l}</span><b>${v}/5 ${d>0?'<span style="color:var(--ok)">▲ +'+d+'</span>':d<0?'<span style="color:var(--bad)">▼ '+d+'</span>':''}</b></div><div class="bar"><i style="width:${v*20}%"></i></div></div>`}).join('')}</div>
+  ${e.comment?`<p class="small" style="margin:0"><b>Commentaire :</b> ${esc(e.comment)}</p>`:''}${e.next?`<p class="small" style="margin:0"><b>Prochaine étape :</b> ${esc(e.next)}</p>`:''}${ev.length>1?`<details><summary class="small" style="cursor:pointer">Évaluations précédentes (${ev.length-1})</summary><div class="list" style="margin-top:6px">${ev.slice(1).map(x=>`<button class="li" data-act="editEval" data-id="${x.id}"><span class="mono">${frD(x.date)}</span><span class="small muted">${SKILLS.map(([k,l])=>l.split(' ')[0]+' '+((x.scores||{})[k]||'-')).join(' · ')}</span></button>`).join('')}</div></details>`:''}<div><button class="btn sm ghost" data-act="editEval" data-id="${e.id}">Modifier cette évaluation</button></div>`}
+function evalForm(memberId,id){const m=DB.members[memberId]||DB.members[(DB.evals[id]||{}).memberId];const src=id&&DB.evals[id];const prev=all('evals').filter(e=>e.memberId===m.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  form=src?JSON.parse(JSON.stringify(src)):{id:uid('E'),memberId:m.id,date:today(),scores:{...(prev?prev.scores:{})},level:m.level,by:''};
+  openModal('Évaluation · '+esc(mName(m)),'Notez de 1 (à travailler) à 5 (excellent)',`<div class="fg">${F('date','Date',{type:'date'})}${F('by','Évalué par',{ph:'Nom de l’encadrant'})}${F('level','Niveau',{type:'select',opts:cfg().levels})}</div>
+   <div class="stack" style="gap:10px">${SKILLS.map(([k,l])=>`<div class="row" style="justify-content:space-between"><span>${l}</span><span class="seg">${[1,2,3,4,5].map(n=>`<button type="button" data-act="score" data-k="${k}" data-v="${n}" aria-pressed="${+form.scores[k]===n}">${n}</button>`).join('')}</span></div>`).join('')}</div>
+   ${F('comment','Commentaire',{type:'area',rows:2,ph:'Points forts, points à améliorer…'})}${F('next','Prochaine étape / objectif',{ph:'Ex. sortie de 60 km, apprendre à réparer une crevaison'})}`,
+   `${src?'<button class="btn danger" data-act="delEval">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="close">Annuler</button><button class="btn primary" data-act="saveEval">Enregistrer</button>`)}
+function saveEval(){readForm();put('evals',form);const m=DB.members[form.memberId];if(m&&form.level&&form.level!==m.level){put('members',{...m,level:form.level});toast('Niveau mis à jour : '+form.level)}else toast('Évaluation enregistrée');closeModal();render()}
+
+/* ---- documents imprimés ---- */
+const docShell=(title,body)=>`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:Arial,sans-serif;color:#111;margin:22px;font-size:13px}h1{font-size:20px;margin:6px 0}h2{font-size:14px;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1f6fe5;padding-bottom:3px;color:#0f1b2d}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:6px 8px;text-align:left;vertical-align:top}th{background:#f1f5fb;width:32%;font-weight:600}td.n,th.n{text-align:right}.hd{display:flex;gap:14px;align-items:center;border-bottom:1px solid #ccc;padding-bottom:10px}.hd img,.hd svg{height:64px;width:auto}.sig{display:flex;gap:30px;margin-top:30px}.sig div{flex:1;border-top:1px solid #999;padding-top:6px;min-height:60px}.ph{width:110px;height:130px;border:1px dashed #999;display:grid;place-items:center;color:#999;font-size:11px;object-fit:cover;flex:0 0 auto}.box{display:inline-block;width:12px;height:12px;border:1px solid #333;margin-right:6px;vertical-align:-2px;text-align:center;line-height:11px;font-size:11px}@media print{body{margin:10mm}}</style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`;
+function docHead(title,sub){const c=cfg();return`<div class="hd">${c.logo?`<img src="${c.logo}" alt="">`:LOGO_SVG}<div><b style="font-size:17px">${esc(c.club)}</b><div>${esc([c.address,c.city].filter(Boolean).join(', '))}${c.phone?' · '+esc(c.phone):''}${c.email?' · '+esc(c.email):''}</div></div></div><h1>${title}</h1>${sub?`<div>${sub}</div>`:''}`}
+function ficheDoc(m){const v=x=>x?esc(x):'&nbsp;';const bx=b=>`<span class="box">${b?'✓':''}</span>`;const c=cfg();m={...(m||{})};m.bike=m.bike||{};m.emergency=m.emergency||{};m.guardian=m.guardian||{};
+  return docShell('Fiche de renseignement',`${docHead('Fiche de renseignement · adhésion '+today().slice(0,4),m.num?'Adhérent N° <b>'+esc(m.num)+'</b> · inscrit le '+frD(m.joinDate):'')}
+  <h2>Identité</h2><div style="display:flex;gap:12px;align-items:flex-start"><table style="flex:1"><tr><th>Nom</th><td>${v(m.lastName)}</td></tr><tr><th>Prénom</th><td>${v(m.firstName)}</td></tr><tr><th>Date de naissance</th><td>${m.birth?frD(m.birth):'&nbsp;'}</td></tr><tr><th>Sexe</th><td>${bx(m.sex==='F')}Femme ${bx(m.sex==='H')}Homme</td></tr><tr><th>N° CIN / passeport</th><td>${v(m.cin)}</td></tr><tr><th>Profession</th><td>${v(m.job)}</td></tr></table>${m.photo?`<img class="ph" src="${m.photo}">`:'<div class="ph">Photo</div>'}</div>
+  <h2>Coordonnées</h2><table><tr><th>Téléphone</th><td>${v(m.phone)}</td></tr><tr><th>E-mail</th><td>${v(m.email)}</td></tr><tr><th>Adresse</th><td>${v([m.address,m.city].filter(Boolean).join(', '))}</td></tr></table>
+  <h2>Personne à prévenir en cas d’urgence</h2><table><tr><th>Nom et lien</th><td>${v([m.emergency.name,m.emergency.relation].filter(Boolean).join(' · '))}</td></tr><tr><th>Téléphone</th><td>${v(m.emergency.phone)}</td></tr></table>
+  <h2>Pour les mineurs : parent ou tuteur légal</h2><table><tr><th>Nom</th><td>${v(m.guardian&&m.guardian.name)}</td></tr><tr><th>Téléphone</th><td>${v(m.guardian&&m.guardian.phone)}</td></tr><tr><td colspan="2">${bx(m.guardian&&m.guardian.ok)}J’autorise mon enfant à participer aux activités du club et l’encadrement à prendre les mesures nécessaires en cas d’urgence.</td></tr></table>
+  <h2>Santé</h2><table><tr><th>Certificat médical (date)</th><td>${m.certDate?frD(m.certDate):'&nbsp;'}</td></tr><tr><th>Groupe sanguin</th><td>${v(m.blood)}</td></tr><tr><th>Allergies / traitements</th><td>${v(m.health)}</td></tr></table>
+  <h2>Vélo et pratique</h2><table><tr><th>Vélo (type, marque, taille)</th><td>${v([m.bike.type,m.bike.brand,m.bike.size].filter(Boolean).join(' · '))}</td></tr><tr><th>Niveau</th><td>${m.level?esc(m.level):c.levels.map(l=>bx(false)+esc(l)).join(' &nbsp; ')}</td></tr><tr><th>Objectif</th><td>${v(m.goal)}</td></tr></table>
+  <h2>Engagements</h2><p>${bx(m.consentRules)}J’ai lu et j’accepte le règlement intérieur du club : port du casque obligatoire, respect du code de la route, des consignes de l’encadrant et des autres membres.</p><p>${bx(m.consentImage)}J’accepte d’être photographié(e) ou filmé(e) lors des activités, pour la communication du club.</p>
+  <div class="sig"><div>Fait à ………………………… le ……/……/……………<br>Signature de l’adhérent (ou du parent)</div><div>Visa du club</div></div>`)}
+function recuDoc(s){const m=DB.members[s.memberId]||{};return docShell('Reçu '+s.num,`${docHead('Reçu de cotisation N° '+esc(s.num||''),'Date : '+frD(s.date||s.start))}
+  <h2>Adhérent</h2><table><tr><th>Nom</th><td>${esc(mName(m))}${m.num?' (N° '+esc(m.num)+')':''}</td></tr><tr><th>Téléphone</th><td>${esc(m.phone||'')}</td></tr></table>
+  <h2>Abonnement</h2><table><tr><th>Formule</th><td>${esc(s.planName)}${s.sessions?' · '+s.sessions+' séances':''}</td></tr><tr><th>Période</th><td>du ${frD(s.start)} au ${frD(s.end)}</td></tr><tr><th>Prix</th><td>${fmt(s.price)} DT</td></tr><tr><th>Montant payé</th><td><b>${fmt(s.paid)} DT</b> · ${esc(METHODS[s.method]||s.method||'')}</td></tr>${+s.paid<+s.price?`<tr><th>Reste à payer</th><td>${fmt(s.price-s.paid)} DT</td></tr>`:''}${s.note?`<tr><th>Note</th><td>${esc(s.note)}</td></tr>`:''}</table>
+  <div class="sig"><div>Signature du club</div><div>Signature de l’adhérent</div></div>`)}
+
+/* ================= ABONNEMENTS ================= */
+let payMonth='';
+routes.abonnements={title:()=>'Abonnements',html(){const tab=route.id||'renouveler';const t=today();
+  const tabs=`<div class="tabs">${[['renouveler','À renouveler'],['paiements','Paiements'],['formules','Formules et tarifs']].map(([k,l])=>`<a class="btn ${tab===k?'primary':''}" href="#abonnements/${k}">${l}</a>`).join('')}</div>`;
+  let body='';
+  if(tab==='renouveler'){const L=members().map(m=>({m,s:mState(m)})).filter(({s})=>s.k==='expire'||s.k==='aucun'||(s.k==='actif'&&(s.days<=15||(s.left!=null&&s.left<=2))));
+    L.sort((a,b)=>(a.s.k==='actif'?0:a.s.k==='expire'?1:2)-(b.s.k==='actif'?0:b.s.k==='expire'?1:2));
+    body=L.length?`<div class="tw"><table><thead><tr><th>Adhérent</th><th>Situation</th><th>Dernière formule</th><th></th></tr></thead><tbody>${L.map(({m,s})=>`<tr><td><a class="who" href="#adherent/${m.id}" style="text-decoration:none;color:inherit">${avatar(m)}<b>${esc(mName(m))}</b></a></td><td>${s.k==='actif'?stChip(m):s.k==='expire'?`<span class="chip bad">Expiré depuis ${s.since} j</span>`:'<span class="chip">Jamais abonné</span>'}</td><td>${s.s?esc(s.s.planName)+' · fin '+frD(s.s.end):'—'}</td><td class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-act="waRelance" data-id="${m.id}">💬 Relancer</button><button class="btn sm primary" data-act="newSub" data-id="${m.id}">Renouveler</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Personne à relancer : tous les abonnements sont à jour 👍</div>'}
+  if(tab==='paiements'){const months=[...new Set(all('subs').map(s=>(s.date||s.start||'').slice(0,7)).filter(Boolean))].sort().reverse();if(!payMonth||!months.includes(payMonth))payMonth=months[0]||t.slice(0,7);
+    const L=all('subs').filter(s=>(s.date||s.start||'').startsWith(payMonth)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));const tot=L.reduce((x,s)=>x+(+s.paid||0),0);const by={};L.forEach(s=>by[s.method]=(by[s.method]||0)+(+s.paid||0));
+    const due=all('subs').filter(s=>+s.paid<+s.price-0.0005);
+    body=`<div class="row"><select class="f" id="payM" style="max-width:220px">${(months.length?months:[payMonth]).map(k=>`<option value="${k}" ${k===payMonth?'selected':''}>${MOISL[+k.slice(5)-1]} ${k.slice(0,4)}</option>`).join('')}</select><span class="spacer"></span><button class="btn" data-act="exportCsv">Exporter (Excel)</button></div>
+    <div class="kpis"><div class="kpi hl"><span class="k">Encaissé</span><span class="v">${fmt(tot)}</span><span class="s">${L.length} paiement(s)</span></div>${Object.entries(by).map(([k,v])=>`<div class="kpi"><span class="k">${esc(METHODS[k]||k)}</span><span class="v">${fmt(v)}</span></div>`).join('')}</div>
+    ${L.length?`<div class="tw"><table><thead><tr><th>Date</th><th>Reçu</th><th>Adhérent</th><th>Formule</th><th>Période</th><th>Mode</th><th class="n">Payé</th><th></th></tr></thead><tbody>${L.map(s=>`<tr><td>${frD(s.date)}</td><td class="mono">${esc(s.num||'')}</td><td><a href="#adherent/${s.memberId}">${esc(mName(DB.members[s.memberId]))}</a></td><td>${esc(s.planName)}</td><td class="small">${frD(s.start)} → ${frD(s.end)}</td><td>${esc(METHODS[s.method]||'')}</td><td class="n">${fmt(s.paid)}</td><td><button class="btn sm" data-act="printRecu" data-id="${s.id}">Reçu</button> <button class="btn sm ghost" data-act="editSub" data-id="${s.id}">✎</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Aucun paiement ce mois-ci.</div>'}
+    ${due.length?`<div class="panel"><h2>Restes à payer</h2><div class="list">${due.map(s=>`<button class="li" data-act="editSub" data-id="${s.id}"><b>${esc(mName(DB.members[s.memberId]))}</b><span class="small muted">${esc(s.planName)} · ${frD(s.start)}</span><span class="spacer"></span><b class="mono" style="color:var(--bad)">${fmt(s.price-s.paid)} DT</b></button>`).join('')}</div></div>`:''}`}
+  if(tab==='formules'){const c=cfg();body=`<div class="panel"><p class="small muted" style="margin:0">Formules proposées aux adhérents. « Durée » : valable un nombre de mois. « Carnet » : un nombre de sorties à utiliser dans un délai.</p>
+    <div class="tw"><table><thead><tr><th>Nom</th><th>Type</th><th>Durée (mois)</th><th>Séances</th><th class="n">Prix (DT)</th><th></th></tr></thead><tbody id="plansT">${c.plans.map((p,i)=>`<tr><td><input class="f" data-pl="name" data-i="${i}" value="${esc(p.name)}"></td><td><select class="f" data-pl="kind" data-i="${i}"><option value="mois" ${p.kind!=='seances'?'selected':''}>Durée</option><option value="seances" ${p.kind==='seances'?'selected':''}>Carnet</option></select></td><td><input class="f mono" style="width:80px" data-pl="months" data-i="${i}" value="${p.months||''}" inputmode="numeric"></td><td><input class="f mono" style="width:80px" data-pl="sessions" data-i="${i}" value="${p.sessions||''}" inputmode="numeric" ${p.kind==='seances'?'':'disabled'}></td><td class="n"><input class="f mono" style="width:110px;text-align:right" data-pl="price" data-i="${i}" value="${String(p.price??'').replace('.',',')}" inputmode="decimal"></td><td><button class="btn sm danger" data-act="delPlan" data-i="${i}">×</button></td></tr>`).join('')}</tbody></table></div>
+    <div class="row"><button class="btn" data-act="addPlan">+ Ajouter une formule</button><span class="spacer"></span><button class="btn primary" data-act="savePlans">Enregistrer les formules</button></div></div>`}
+  return`<div class="stack"><div class="row"><h1>Abonnements</h1><span class="spacer"></span><button class="btn primary" data-act="newSub">+ Nouvel abonnement</button></div>${tabs}${body}</div>`},
+ after(){const s=$('#payM');if(s)s.addEventListener('change',()=>{payMonth=s.value;render()});$$('[data-pl=kind]').forEach(el=>el.addEventListener('change',()=>{const r=el.closest('tr').querySelector('[data-pl=sessions]');r.disabled=el.value!=='seances'}))}};
+function readPlans(){const c=cfg();const P=c.plans.map(p=>({...p}));$$('[data-pl]').forEach(el=>{const p=P[+el.dataset.i];const k=el.dataset.pl;p[k]=k==='name'||k==='kind'?el.value.trim():pnum(el.value)});return P}
+function subForm(memberId,id){const c=cfg();const src=id&&DB.subs[id];
+  let start=today();if(memberId&&!src){const st=mState(DB.members[memberId]||{});if(st.k==='actif'&&!st.s.sessions)start=addDays(st.s.end,1)}
+  const p0=c.plans[0]||{id:'',name:'',months:1,price:0};
+  form=src?JSON.parse(JSON.stringify(src)):{id:uid('S'),num:nextNum('R','subs','num'),memberId:memberId||'',planId:p0.id,start,date:today(),method:'especes'};
+  if(!src)subApplyPlan(p0);
+  const M=members();
+  openModal(src?'Abonnement '+esc(src.num||''):'Nouvel abonnement',src?esc(mName(DB.members[src.memberId])):'',`
+   ${F('memberId','Adhérent',{type:'select',opts:[['','— Choisir —'],...M.map(m=>[m.id,mName(m)+(m.num?' ('+m.num+')':'')])]})}
+   <div class="fg">${F('planId','Formule',{type:'select',opts:[...c.plans.map(p=>[p.id,p.name+' · '+fmt(p.price)+' DT']),['autre','Autre (saisie libre)']]})}${F('planName','Nom de la formule')}${F('start','Début',{type:'date'})}${F('end','Fin',{type:'date'})}${F('sessions','Nombre de séances (carnet)',{attr:'inputmode="numeric"',ph:'vide = illimité'})}</div>
+   <div class="fg">${F('price','Prix (DT)',{attr:'inputmode="decimal"'})}${F('paid','Montant payé (DT)',{attr:'inputmode="decimal"'})}${F('method','Mode de paiement',{type:'select',opts:Object.entries(METHODS)})}${F('date','Date du paiement',{type:'date'})}</div>
+   ${F('note','Note',{ph:'Ex. réduction famille, payé en 2 fois…'})}<div id="subWarn"></div>`,
+   `${src?'<button class="btn danger" data-act="delSub">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="close">Annuler</button><button class="btn primary" data-act="saveSub">Enregistrer</button>`);
+  const q=s=>$('#ov [data-k="'+s+'"]');
+  q('planId').addEventListener('change',()=>{readForm();const p=cfg().plans.find(x=>x.id===form.planId);if(p){subApplyPlan(p);['planName','end','sessions','price','paid'].forEach(k=>q(k).value=String(form[k]??'').replace('.',','))}});
+  q('start').addEventListener('change',()=>{readForm();const p=cfg().plans.find(x=>x.id===form.planId);if(p){form.end=addMonths(form.start,+p.months||1);q('end').value=form.end}});
+  q('memberId').addEventListener('change',()=>{readForm();const m=DB.members[form.memberId];const st=m&&mState(m);$('#subWarn').innerHTML=st&&st.k==='actif'?`<div class="alert">Abonnement en cours jusqu’au ${frD(st.s.end)} (${esc(st.s.planName)}).</div>`:'';if(st&&st.k==='actif'&&!st.s.sessions&&!src){form.start=addDays(st.s.end,1);q('start').value=form.start;q('start').dispatchEvent(new Event('change'))}});
+  if(memberId&&!src)q('memberId').dispatchEvent(new Event('change'))}
+function subApplyPlan(p){form.planId=p.id;form.planName=p.name;form.end=addMonths(form.start||today(),+p.months||1);form.sessions=p.kind==='seances'?(p.sessions||''):'';form.price=p.price;form.paid=p.price}
+function saveSub(){readForm();if(!form.memberId)return toast('Choisissez l’adhérent');if(!form.start||!form.end||form.end<form.start)return toast('Vérifiez les dates de début et de fin');
+  form.price=pnum(form.price)||0;form.paid=pnum(form.paid)??form.price;form.sessions=pnum(form.sessions)||'';if(!form.planName)form.planName='Abonnement';
+  const isNew=!DB.subs[form.id];const s=put('subs',form);closeModal();render();toast('Abonnement enregistré');
+  if(isNew)setTimeout(()=>ask('Imprimer le reçu de '+fmt(s.paid)+' DT ?','Imprimer le reçu',()=>printDoc(recuDoc(s))),300)}
+function relanceText(m){const s=mState(m);const c=cfg();return`Bonjour ${m.firstName||mName(m)}, `+(s.k==='actif'?`votre abonnement « ${s.s.planName} » au ${c.club} se termine le ${frD(s.s.end)}.`:s.k==='expire'?`votre abonnement au ${c.club} est terminé depuis le ${frD(s.s.end)}.`:`nous serions ravis de vous compter parmi les membres du ${c.club}.`)+` Pour continuer à rouler avec nous, pensez à le renouveler lors de la prochaine sortie. À bientôt sur le vélo ! 🚴`}
+function exportCsv(){const L=all('subs').sort((a,b)=>(a.date||'').localeCompare(b.date||''));const rows=[['Date','Reçu','N° adhérent','Adhérent','Formule','Début','Fin','Prix','Payé','Mode']].concat(L.map(s=>{const m=DB.members[s.memberId]||{};return[frD(s.date),s.num,m.num,mName(m),s.planName,frD(s.start),frD(s.end),String(s.price).replace('.',','),String(s.paid).replace('.',','),METHODS[s.method]||'']}));
+  download('cotisations-'+today()+'.csv','﻿'+rows.map(r=>r.map(v=>{const x=String(v??'');return/[;"\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x}).join(';')).join('\r\n'),'text/csv');toast('Fichier téléchargé (s’ouvre avec Excel)')}
+
+/* ================= ACTIVITÉS ================= */
+const dateBox=s=>{const d=dt(s);return`<span class="act-date"><b>${d.getDate()}</b><span>${MOIS[d.getMonth()]}</span></span>`};
+const tChip=t=>{const x=ATYPES[t]||['Activité','#666'];return`<span class="chip" style="background:${x[1]}1f;color:${x[1]};border-color:transparent">${x[0]}</span>`};
+function actLi(a){const c=a.circuitId&&DB.circuits[a.circuitId];const n=(a.parts||[]).length;const pres=(a.parts||[]).filter(p=>p.present).length;
+  return`<a class="li" href="#activite/${a.id}">${dateBox(a.date)}<span style="min-width:0;flex:1"><b>${esc(a.title||ATYPES[a.type][0])}</b><span class="small muted" style="display:block">${[a.time?a.time.replace(':','h'):'',c?c.name+' · '+km1(c.km)+' km':(actKm(a)?km1(actKm(a))+' km':''),a.meet].filter(Boolean).map(esc).join(' · ')}</span></span>${tChip(a.type)}${a.status==='annulee'?'<span class="chip bad">Annulée</span>':done(a)?`<span class="chip ok">${pres} présent(s)</span>`:`<span class="chip acc">${n} inscrit(s)${a.max?' / '+a.max:''}</span>`}</a>`}
+let aView='avenir';
+routes.activites={title:()=>'Activités',html(){if(route.id==='nouveau'){history.replaceState(null,'','#activites');setTimeout(()=>actForm(),0)}const t=today();
+  const A=all('acts');const fut=A.filter(a=>a.date>=t).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));const past=A.filter(a=>a.date<t).sort((a,b)=>b.date.localeCompare(a.date));
+  const L=aView==='avenir'?fut:past;
+  return`<div class="stack"><div class="row"><h1>Activités</h1><span class="spacer"></span><button class="btn primary" data-act="newAct">+ Nouvelle activité</button></div>
+  <p class="muted small" style="margin:0">Sorties, entraînements, formations (mécanique, sécurité…), événements conviviaux. Inscrivez les participants puis cochez les présents : les kilomètres sont comptés dans la progression de chacun.</p>
+  <div class="tabs"><button data-act="aView" data-v="avenir" aria-pressed="${aView==='avenir'}">À venir (${fut.length})</button><button data-act="aView" data-v="passe" aria-pressed="${aView==='passe'}">Passées (${past.length})</button></div>
+  ${L.length?groupByMonth(L).map(([k,G])=>`<h3>${MOISL[+k.slice(5)-1]} ${k.slice(0,4)}</h3><div class="list">${G.map(actLi).join('')}</div>`).join(''):`<div class="empty">${aView==='avenir'?'Aucune activité prévue.':'Aucune activité passée.'}</div>`}</div>`}};
+function groupByMonth(L){const g=[];L.forEach(a=>{const k=a.date.slice(0,7);let x=g.find(y=>y[0]===k);if(!x)g.push(x=[k,[]]);x[1].push(a)});return g}
+function actForm(id,preset){const src=id&&DB.acts[id];const C=all('circuits').sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+  form=src?JSON.parse(JSON.stringify(src)):{id:uid('V'),type:'sortie',date:addDays(today(),1),time:'08:00',status:'prevue',parts:[],...(preset||{})};
+  openModal(src?'Modifier l’activité':'Nouvelle activité','',`<div class="fg">${F('type','Type',{type:'select',opts:Object.entries(ATYPES).map(([k,v])=>[k,v[0]])})}${F('title','Titre',{ph:'Ex. Sortie du dimanche, Atelier crevaison…',cls:'w2'})}${F('date','Date',{type:'date'})}${F('time','Heure de départ',{type:'time'})}${F('duration','Durée prévue',{ph:'Ex. 3 h'})}</div>
+   <div class="fg">${F('circuitId','Circuit',{type:'select',opts:[['','— Aucun —'],...C.map(c=>[c.id,c.name+' · '+km1(c.km)+' km'])]})}${F('km','Distance (km)',{attr:'inputmode="decimal"',ph:'auto si circuit'})}${F('dplus','Dénivelé + (m)',{attr:'inputmode="numeric"',ph:'auto si circuit'})}${F('level','Niveau conseillé',{type:'select',opts:['','Tous niveaux',...cfg().levels]})}</div>
+   <div class="fg">${F('meet','Lieu de rendez-vous',{cls:'w2'})}${F('leader','Encadrant / responsable')}${F('max','Places max',{attr:'inputmode="numeric"'})}${F('price','Participation (DT)',{attr:'inputmode="decimal"',ph:'gratuit'})}</div>
+   ${F('desc','Programme, matériel à prévoir',{type:'area',rows:3,ph:'Casque obligatoire, 2 bidons, chambre à air de rechange, pause café à mi-parcours…'})}
+   ${src?F('status','Statut',{type:'select',opts:[['prevue','Prévue'],['annulee','Annulée']]}):''}`,
+   `${src?'<button class="btn danger" data-act="delAct">Supprimer</button><button class="btn" data-act="dupAct">Dupliquer</button>':''}<span class="spacer"></span><button class="btn" data-act="close">Annuler</button><button class="btn primary" data-act="saveAct">Enregistrer</button>`,true)}
+function saveAct(){readForm();if(!form.date)return toast('Indiquez la date');if(!form.title){const c=form.circuitId&&DB.circuits[form.circuitId];form.title=ATYPES[form.type][0]+(c?' · '+c.name:'')}
+  form.max=pnum(form.max)||'';const isNew=!DB.acts[form.id];const a=put('acts',form);closeModal();if(isNew)go('activite/'+a.id);else render();toast('Activité enregistrée')}
+routes.activite={nav:'activites',title:()=>(DB.acts[route.id]||{}).title||'Activité',html(){const a=DB.acts[route.id];if(!a)return'<div class="empty">Activité introuvable. <a href="#activites">Retour</a></div>';
+  const c=a.circuitId&&DB.circuits[a.circuitId];const P=(a.parts||[]).map(p=>({p,m:DB.members[p.memberId]})).filter(x=>x.m).sort((x,y)=>mName(x.m).localeCompare(mName(y.m),'fr'));const past=done(a);const pres=P.filter(x=>x.p.present);
+  return`<div class="stack"><div class="row"><a class="btn ghost sm" href="#activites">← Activités</a></div>
+  <div class="panel"><div class="row" style="align-items:flex-start">${dateBox(a.date)}<div style="flex:1 1 260px;display:flex;flex-direction:column;gap:6px"><h1>${esc(a.title)}</h1><div class="row" style="gap:6px">${tChip(a.type)}${a.level?`<span class="chip">${esc(a.level)}</span>`:''}${a.status==='annulee'?'<span class="chip bad">Annulée</span>':''}</div>
+    <span class="muted">${esc(frLong(a.date))}${a.time?' · départ '+a.time.replace(':','h'):''}${a.duration?' · '+esc(a.duration):''}</span></div>
+    <div class="row" style="gap:6px"><button class="btn" data-act="editAct" data-id="${a.id}">Modifier</button><button class="btn" data-act="shareAct" data-id="${a.id}">💬 Annonce WhatsApp</button><button class="btn" data-act="printPres" data-id="${a.id}">🖨 Feuille de présence</button></div></div>
+   <div class="kpis">${actKm(a)?`<div class="kpi"><span class="k">Distance</span><span class="v">${km1(actKm(a))}</span><span class="s">km</span></div>`:''}${actDplus(a)?`<div class="kpi"><span class="k">Dénivelé</span><span class="v">${int(actDplus(a))}</span><span class="s">m D+</span></div>`:''}<div class="kpi"><span class="k">${past?'Présents':'Inscrits'}</span><span class="v">${past?pres.length:P.length}</span><span class="s">${a.max?'sur '+a.max+' places':past?P.length+' inscrit(s)':''}</span></div>${a.price?`<div class="kpi"><span class="k">Participation</span><span class="v">${fmt(a.price)}</span><span class="s">DT</span></div>`:''}</div>
+   ${a.meet||a.leader?`<div class="small"><b>Rendez-vous :</b> ${esc(a.meet||'—')}${a.leader?' · <b>Encadrant :</b> '+esc(a.leader):''}</div>`:''}${a.desc?`<div style="white-space:pre-line">${esc(a.desc)}</div>`:''}
+   ${c?`<a class="card" href="#circuit/${c.id}" style="flex-direction:row;align-items:center"><span style="width:120px;flex:0 0 auto">${traceSvg(c,120,70)}</span><span><b>${esc(c.name)}</b><span class="small muted" style="display:block">${esc(c.type||'')} · ${km1(c.km)} km · ${int(c.dplus)} m D+ · ${DIFF[c.diff||1]}</span></span></a>`:''}</div>
+  <div class="panel"><div class="row"><h2>Participants</h2><span class="chip">${P.length}</span><span class="spacer"></span>${P.length?`<button class="btn sm" data-act="allPresent" data-id="${a.id}">Tous présents</button>`:''}<button class="btn sm primary" data-act="addParts" data-id="${a.id}">+ Inscrire des adhérents</button></div>
+   ${P.length?`<div class="tw"><table><thead><tr><th>Présent</th><th>Adhérent</th><th>Abonnement</th><th class="n">Km faits</th><th>Remarque</th><th></th></tr></thead><tbody>${P.map(({p,m})=>`<tr><td><input type="checkbox" data-pres="${m.id}" ${p.present?'checked':''} style="width:20px;height:20px;accent-color:var(--ok)"></td><td><a class="who" href="#adherent/${m.id}" style="text-decoration:none;color:inherit">${avatar(m)}<b>${esc(mName(m))}</b></a></td><td>${stChip(m)}</td><td class="n"><input class="f mono" data-pkm="${m.id}" value="${p.km??''}" placeholder="${km1(actKm(a))}" style="width:86px;text-align:right" inputmode="decimal"></td><td><input class="f" data-pnote="${m.id}" value="${esc(p.note||'')}" placeholder="Ex. a fait la boucle courte"></td><td><button class="btn sm ghost" data-act="rmPart" data-id="${m.id}" aria-label="Retirer">×</button></td></tr>`).join('')}</tbody></table></div>
+    <span class="hint">Cochez les présents après l’activité. « Km faits » : laissez vide si la personne a fait toute la distance.</span>`:'<div class="empty">Aucun inscrit pour l’instant.</div>'}</div></div>`},
+ after(){const a=DB.acts[route.id];if(!a)return;const upd=(id,f)=>{const p=(a.parts||[]).find(x=>x.memberId===id);if(p){f(p);put('acts',a)}};
+  $$('[data-pres]').forEach(el=>el.addEventListener('change',()=>{upd(el.dataset.pres,p=>p.present=el.checked);toast(el.checked?'Présence enregistrée':'Présence retirée')}));
+  $$('[data-pkm]').forEach(el=>el.addEventListener('change',()=>upd(el.dataset.pkm,p=>p.km=pnum(el.value))));
+  $$('[data-pnote]').forEach(el=>el.addEventListener('change',()=>upd(el.dataset.pnote,p=>p.note=el.value.trim())))}};
+let ppSel=new Set();
+function partPicker(id){const a=DB.acts[id];const inn=new Set((a.parts||[]).map(p=>p.memberId));ppSel=new Set();
+  const L=members().filter(m=>!inn.has(m.id));
+  openModal('Inscrire des adhérents',esc(a.title),`<input class="f" id="ppQ" placeholder="Rechercher…"><div class="row small"><button class="btn sm" data-act="ppAll">Tout sélectionner</button><span class="muted">Touchez les noms pour les cocher.</span></div><div class="list" id="ppL" style="max-height:52vh;overflow:auto">${L.map(m=>`<label class="li" data-nm="${esc(norm(mName(m)))}"><input type="checkbox" data-pp="${m.id}" style="width:20px;height:20px">${avatar(m)}<span class="who"><b>${esc(mName(m))}</b></span><span class="spacer"></span>${m.level?`<span class="chip">${esc(m.level)}</span>`:''}${stChip(m)}</label>`).join('')||'<div class="empty">Tous les adhérents sont déjà inscrits.</div>'}</div>`,
+   `<span class="spacer"></span><button class="btn" data-act="close">Annuler</button><button class="btn primary" data-act="ppOk" data-id="${id}">Inscrire la sélection</button>`);
+  $('#ppQ').addEventListener('input',e=>{const q=norm(e.target.value);$$('#ppL [data-nm]').forEach(el=>el.hidden=q&&!el.dataset.nm.includes(q))})}
+function shareText(a){const c=a.circuitId&&DB.circuits[a.circuitId];const C=cfg();
+  return`🚴 *${a.title}* — ${C.club}\n📅 ${frLong(a.date)}${a.time?' · départ '+a.time.replace(':','h'):''}\n${a.meet?'📍 Rendez-vous : '+a.meet+'\n':''}${c?'🗺️ Circuit : '+c.name+' · '+km1(c.km)+' km · '+int(c.dplus)+' m D+ ('+DIFF[c.diff||1]+')\n':actKm(a)?'🗺️ '+km1(actKm(a))+' km\n':''}${a.level?'💪 Niveau : '+a.level+'\n':''}${a.leader?'👤 Encadrant : '+a.leader+'\n':''}${a.price?'💰 Participation : '+fmt(a.price)+' DT\n':''}${a.desc?'\n'+a.desc+'\n':''}${c&&c.link?'\nTracé : '+c.link+'\n':''}\nCasque obligatoire. Répondez pour vous inscrire 👍`}
+function presDoc(a){const P=(a.parts||[]).map(p=>DB.members[p.memberId]).filter(Boolean).sort((x,y)=>mName(x).localeCompare(mName(y),'fr'));const blank=Math.max(6,(+a.max||0)-P.length);
+  return docShell('Présence '+a.title,`${docHead('Feuille de présence',`<b>${esc(a.title)}</b> · ${esc(frLong(a.date))}${a.time?' · '+a.time.replace(':','h'):''}${a.meet?' · '+esc(a.meet):''}`)}
+  <table style="margin-top:12px"><thead><tr><th style="width:30px">#</th><th style="width:auto">Nom</th><th style="width:110px">Téléphone</th><th style="width:120px">Urgence</th><th style="width:60px">Casque</th><th style="width:140px">Signature</th></tr></thead><tbody>${P.map((m,i)=>`<tr><td>${i+1}</td><td>${esc(mName(m))}</td><td>${esc(m.phone||'')}</td><td style="font-size:11px">${esc((m.emergency||{}).phone||'')}</td><td></td><td></td></tr>`).join('')}${Array.from({length:blank},(_,i)=>`<tr><td>${P.length+i+1}</td><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>`).join('')}</tbody></table>
+  <div class="sig"><div>Encadrant : ${esc(a.leader||'')}</div><div>Observations</div></div>`)}
+
+/* ================= CIRCUITS ================= */
+function traceSvg(c,w,h){const P=(c.pts||[]).filter(p=>isFinite(p[0]));if(P.length<2)return`<svg viewBox="0 0 ${w} ${h}" class="trace" style="aspect-ratio:${w}/${h}"><text x="${w/2}" y="${h/2+4}" text-anchor="middle" font-size="${Math.max(10,h/8)}" fill="var(--muted)">Pas de tracé</text></svg>`;
+  const lat0=P[0][0]*Math.PI/180;const X=P.map(p=>p[1]*Math.cos(lat0)),Y=P.map(p=>-p[0]);const x0=Math.min(...X),x1=Math.max(...X),y0=Math.min(...Y),y1=Math.max(...Y);const m=Math.max(6,w*.06);const s=Math.min((w-2*m)/((x1-x0)||1e-9),(h-2*m)/((y1-y0)||1e-9));
+  const ox=(w-(x1-x0)*s)/2,oy=(h-(y1-y0)*s)/2;const d=P.map((p,i)=>(i?'L':'M')+((X[i]-x0)*s+ox).toFixed(1)+' '+((Y[i]-y0)*s+oy).toFixed(1)).join(' ');const e=P.length-1;
+  return`<svg viewBox="0 0 ${w} ${h}" class="trace" style="aspect-ratio:${w}/${h}" role="img" aria-label="Tracé du circuit"><path d="${d}" fill="none" stroke="#1f6fe5" stroke-width="${Math.max(2,w/110)}" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${((X[0]-x0)*s+ox).toFixed(1)}" cy="${((Y[0]-y0)*s+oy).toFixed(1)}" r="${Math.max(3,w/70)}" fill="#15803d"/><circle cx="${((X[e]-x0)*s+ox).toFixed(1)}" cy="${((Y[e]-y0)*s+oy).toFixed(1)}" r="${Math.max(2.5,w/90)}" fill="#c62828"/></svg>`}
+function profileSvg(c){const P=(c.pts||[]).filter(p=>p[2]!=null&&p[3]!=null);if(P.length<2)return'';const W=800,H=170;const D=P[P.length-1][3]||1;const e0=Math.min(...P.map(p=>p[2])),e1=Math.max(...P.map(p=>p[2]));const r=Math.max(20,e1-e0);
+  const pts=P.map(p=>[(p[3]/D*(W-40)+30).toFixed(1),(H-20-(p[2]-e0)/r*(H-40)).toFixed(1)]);
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Profil d’altitude"><defs><linearGradient id="gPr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb0ff" stop-opacity=".55"/><stop offset="1" stop-color="#3fb0ff" stop-opacity=".05"/></linearGradient></defs>
+   <path d="M${pts[0][0]} ${H-20} L${pts.map(p=>p.join(' ')).join(' L')} L${pts[pts.length-1][0]} ${H-20}Z" fill="url(#gPr)"/><path d="M${pts.map(p=>p.join(' ')).join(' L')}" fill="none" stroke="#1f6fe5" stroke-width="2"/>
+   <text x="4" y="24" font-size="12" fill="var(--muted)">${int(e1)} m</text><text x="4" y="${H-24}" font-size="12" fill="var(--muted)">${int(e0)} m</text><text x="${W-10}" y="${H-4}" text-anchor="end" font-size="12" fill="var(--muted)">${km1(D/1000)} km</text></svg>`}
+const hav=(a,b)=>{const R=6371000,t=Math.PI/180;const dLa=(b[0]-a[0])*t,dLo=(b[1]-a[1])*t;const x=Math.sin(dLa/2)**2+Math.cos(a[0]*t)*Math.cos(b[0]*t)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
+function parseGPX(txt){const x=new DOMParser().parseFromString(txt,'application/xml');let N=[...x.getElementsByTagName('trkpt')];if(!N.length)N=[...x.getElementsByTagName('rtept')];
+  const P=N.map(p=>{const e=p.getElementsByTagName('ele')[0];return[+p.getAttribute('lat'),+p.getAttribute('lon'),e?+e.textContent:NaN]}).filter(p=>isFinite(p[0])&&isFinite(p[1]));if(P.length<2)return null;
+  let d=0;const cum=[0];for(let i=1;i<P.length;i++){d+=hav(P[i-1],P[i]);cum.push(d)}
+  let up=0,last=null;P.forEach(p=>{if(!isFinite(p[2]))return;if(last==null){last=p[2];return}const dd=p[2]-last;if(dd>=4){up+=dd;last=p[2]}else if(dd<=-4)last=p[2]});
+  const step=Math.max(1,Math.ceil(P.length/600));const pts=[];for(let i=0;i<P.length;i+=step)pts.push([+P[i][0].toFixed(5),+P[i][1].toFixed(5),isFinite(P[i][2])?Math.round(P[i][2]):null,Math.round(cum[i])]);
+  const L=P.length-1;if((L%step))pts.push([+P[L][0].toFixed(5),+P[L][1].toFixed(5),isFinite(P[L][2])?Math.round(P[L][2]):null,Math.round(cum[L])]);
+  const nm=x.getElementsByTagName('name')[0];return{km:Math.round(d/100)/10,dplus:Math.round(up),pts,name:nm?nm.textContent.trim():''}}
+let cF='';
+routes.circuits={title:()=>'Circuits',html(){const C=all('circuits').filter(c=>!cF||c.type===cF).sort((a,b)=>a.km-b.km);
+  return`<div class="stack"><div class="row"><h1>Circuits</h1><span class="spacer"></span><button class="btn primary" data-act="newCircuit">+ Nouveau circuit</button></div>
+  <p class="muted small" style="margin:0">Vos parcours habituels. Importez un fichier GPX (depuis Strava, Komoot, Garmin, Wikiloc…) : distance, dénivelé, tracé et profil sont calculés automatiquement.</p>
+  <div class="tabs"><button data-act="cFilter" data-v="" aria-pressed="${!cF}">Tous</button>${CTYPES.map(t=>`<button data-act="cFilter" data-v="${t}" aria-pressed="${cF===t}">${t}</button>`).join('')}</div>
+  ${C.length?`<div class="grid">${C.map(c=>`<a class="card" href="#circuit/${c.id}">${traceSvg(c,300,150)}<b>${esc(c.name)}</b><span class="row" style="gap:6px"><span class="chip">${esc(c.type||'')}</span><span class="chip ${DIFFC[c.diff||1]}">${DIFF[c.diff||1]}</span><span class="spacer"></span><span class="mono small"><b>${km1(c.km)} km</b> · ${int(c.dplus)} m D+</span></span>${c.start?`<span class="small muted">Départ : ${esc(c.start)}</span>`:''}</a>`).join('')}</div>`:'<div class="empty">Aucun circuit. Ajoutez votre premier parcours.</div>'}</div>`}};
+function circuitForm(id){const src=id&&DB.circuits[id];form=src?JSON.parse(JSON.stringify(src)):{id:uid('C'),type:'Route',diff:2,pts:[]};
+  openModal(src?'Modifier le circuit':'Nouveau circuit','',`<div class="panel" style="background:var(--panel2)"><div class="row"><label class="btn primary">📂 Importer un fichier GPX<input type="file" id="gpxIn" accept=".gpx,application/gpx+xml,application/xml,text/xml" hidden></label><span class="small muted" id="gpxInfo">${form.pts&&form.pts.length?'Tracé enregistré ('+form.pts.length+' points)':'Facultatif : sinon saisissez la distance à la main.'}</span></div><div id="gpxPrev">${form.pts&&form.pts.length?traceSvg(form,560,200):''}</div></div>
+   <div class="fg">${F('name','Nom du circuit',{cls:'w2'})}${F('type','Type',{type:'select',opts:CTYPES})}${F('diff','Difficulté',{type:'select',opts:[[1,'Facile'],[2,'Moyen'],[3,'Difficile'],[4,'Très difficile']]})}${F('km','Distance (km)',{attr:'inputmode="decimal"'})}${F('dplus','Dénivelé + (m)',{attr:'inputmode="numeric"'})}${F('duration','Durée moyenne',{ph:'Ex. 2 h 30'})}${F('start','Lieu de départ',{cls:'w2'})}</div>
+   ${F('link','Lien du tracé (Strava, Komoot, Google Maps…)',{type:'url',ph:'https://…'})}${F('desc','Description, points d’eau, passages délicats',{type:'area',rows:3})}`,
+   `${src?'<button class="btn danger" data-act="delCircuit">Supprimer</button>':''}<span class="spacer"></span><button class="btn" data-act="close">Annuler</button><button class="btn primary" data-act="saveCircuit">Enregistrer</button>`,true);
+  $('#gpxIn').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;const r=parseGPX(await f.text());if(!r)return toast('Fichier GPX illisible ou sans tracé');readForm();form.pts=r.pts;form.km=r.km;form.dplus=r.dplus;if(!form.name)form.name=r.name||f.name.replace(/\.gpx$/i,'');
+    const q=k=>$('#ov [data-k="'+k+'"]');q('km').value=String(r.km).replace('.',',');q('dplus').value=r.dplus;q('name').value=form.name;$('#gpxPrev').innerHTML=traceSvg(form,560,200);$('#gpxInfo').textContent=km1(r.km)+' km · '+int(r.dplus)+' m D+ · '+r.pts.length+' points';toast('Tracé importé')})}
+function saveCircuit(){readForm();if(!form.name)return toast('Donnez un nom au circuit');form.km=pnum(form.km)||0;form.dplus=pnum(form.dplus)||0;form.diff=+form.diff||1;const isNew=!DB.circuits[form.id];const c=put('circuits',form);closeModal();if(isNew)go('circuit/'+c.id);else render();toast('Circuit enregistré')}
+routes.circuit={nav:'circuits',title:()=>(DB.circuits[route.id]||{}).name||'Circuit',html(){const c=DB.circuits[route.id];if(!c)return'<div class="empty">Circuit introuvable. <a href="#circuits">Retour</a></div>';
+  const A=all('acts').filter(a=>a.circuitId===c.id).sort((a,b)=>b.date.localeCompare(a.date));
+  return`<div class="stack"><div class="row"><a class="btn ghost sm" href="#circuits">← Circuits</a></div>
+  <div class="row"><h1>${esc(c.name)}</h1><span class="chip">${esc(c.type||'')}</span><span class="chip ${DIFFC[c.diff||1]}">${DIFF[c.diff||1]}</span><span class="spacer"></span><button class="btn" data-act="editCircuit" data-id="${c.id}">Modifier</button><button class="btn primary" data-act="actOnCircuit" data-id="${c.id}">+ Sortie sur ce circuit</button></div>
+  <div class="kpis"><div class="kpi hl"><span class="k">Distance</span><span class="v">${km1(c.km)}</span><span class="s">km</span></div><div class="kpi"><span class="k">Dénivelé</span><span class="v">${int(c.dplus)}</span><span class="s">m D+</span></div>${c.duration?`<div class="kpi"><span class="k">Durée moyenne</span><span class="v" style="font-size:22px;padding-top:6px">${esc(c.duration)}</span></div>`:''}<div class="kpi"><span class="k">Sorties faites</span><span class="v">${A.filter(done).length}</span><span class="s">sur ce circuit</span></div></div>
+  <div class="grid2"><div class="panel">${traceSvg(c,560,340)}${profileSvg(c)}</div><div class="panel">${c.start?`<div><b>Départ :</b> ${esc(c.start)}</div>`:''}${c.desc?`<div style="white-space:pre-line">${esc(c.desc)}</div>`:''}${c.link?`<a class="btn" href="${esc(c.link)}" target="_blank" rel="noopener">🗺️ Ouvrir le tracé en ligne</a>`:''}
+   ${(c.pts||[]).length?`<button class="btn" data-act="gpxOut" data-id="${c.id}">Télécharger le GPX</button>`:''}<h3>Activités sur ce circuit</h3>${A.length?`<div class="list">${A.slice(0,10).map(actLi).join('')}</div>`:'<div class="empty">Aucune pour l’instant.</div>'}</div></div></div>`}};
+function gpxOut(c){const x=`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="${esc(cfg().club)}" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${esc(c.name)}</name><trkseg>${c.pts.map(p=>`<trkpt lat="${p[0]}" lon="${p[1]}">${p[2]!=null?`<ele>${p[2]}</ele>`:''}</trkpt>`).join('')}</trkseg></trk></gpx>`;download(c.name.replace(/[^\w-]+/g,'-')+'.gpx',x,'application/gpx+xml')}
+
+/* ================= PROGRESSION ================= */
+let prP='mois';
+routes.progression={title:()=>'Progression',html(){const t=today();const from=prP==='mois'?t.slice(0,7)+'-01':prP==='annee'?t.slice(0,4)+'-01-01':'';
+  const R=members().map(m=>({m,...mStats(m.id,from,t)})).sort((a,b)=>b.km-a.km||b.n-a.n);const act=R.filter(x=>x.n);const tot=act.reduce((s,x)=>s+x.km,0);const A=all('acts').filter(a=>done(a)&&(!from||a.date>=from));
+  const lv={};members().forEach(m=>lv[m.level||'—']=(lv[m.level||'—']||0)+1);const mx=Math.max(1,...Object.values(lv));
+  return`<div class="stack"><div class="row"><h1>Progression</h1><span class="spacer"></span><div class="tabs">${[['mois','Ce mois'],['annee','Cette année'],['tout','Depuis le début']].map(([k,l])=>`<button data-act="prP" data-v="${k}" aria-pressed="${prP===k}">${l}</button>`).join('')}</div></div>
+  <div class="kpis"><div class="kpi hl"><span class="k">Km du club</span><span class="v">${int(tot)}</span><span class="s">tous les membres présents</span></div><div class="kpi"><span class="k">Activités faites</span><span class="v">${A.length}</span></div><div class="kpi"><span class="k">Membres actifs</span><span class="v">${act.length}</span><span class="s">au moins une sortie</span></div><div class="kpi"><span class="k">Moyenne</span><span class="v">${act.length?int(tot/act.length):0}</span><span class="s">km par membre actif</span></div></div>
+  <div class="grid2"><div class="panel"><h2>Classement</h2>${act.length?`<div class="tw"><table><thead><tr><th>#</th><th>Adhérent</th><th class="n">Sorties</th><th class="n">Km</th><th class="n">D+</th></tr></thead><tbody>${act.map((x,i)=>`<tr class="click" data-href="#adherent/${x.m.id}"><td><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b></td><td><span class="who">${avatar(x.m)}<b>${esc(mName(x.m))}</b></span></td><td class="n">${x.n}</td><td class="n"><b>${km1(x.km)}</b></td><td class="n">${int(x.dp)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Aucune présence enregistrée sur la période.</div>'}</div>
+   <div class="stack"><div class="panel"><h2>Km du club par mois</h2>${monthChart('')}</div><div class="panel"><h2>Niveaux des adhérents</h2>${Object.entries(lv).map(([k,v])=>`<div><div class="row small" style="justify-content:space-between"><span>${esc(k)}</span><b>${v}</b></div><div class="bar"><i style="width:${v/mx*100}%"></i></div></div>`).join('')||'<div class="empty">—</div>'}</div></div></div></div>`}};
+
+/* ================= RÉGLAGES ================= */
+routes.reglages={title:()=>'Réglages',html(){const c=cfg();const n=COLS.reduce((s,k)=>s+Object.keys(DB[k]).length,0);const last=lsGet('club-lastBackup');
+  return`<div class="stack"><h1>Réglages</h1><div class="grid2"><div class="panel"><h2>Le club</h2>
+   <div class="row" style="gap:14px"><span style="width:110px;height:76px;display:grid;place-items:center;background:var(--panel2);border-radius:8px;padding:6px">${c.logo?`<img src="${c.logo}" alt="" style="max-width:100%;max-height:100%">`:LOGO_SVG}</span><div class="stack" style="gap:6px"><label class="btn sm">Changer le logo<input type="file" id="logoIn" accept="image/*" hidden></label>${c.logo?'<button class="btn sm ghost" data-act="logoDel">Logo par défaut</button>':''}</div></div>
+   <div class="fg"><label class="fl w2">Nom du club<input class="f" id="sClub" value="${esc(c.club)}"></label><label class="fl w2">Slogan<input class="f" id="sTag" value="${esc(c.tagline)}"></label><label class="fl">Ville<input class="f" id="sCity" value="${esc(c.city)}"></label><label class="fl">Téléphone<input class="f" id="sPhone" value="${esc(c.phone)}"></label><label class="fl w2">Adresse<input class="f" id="sAddr" value="${esc(c.address)}"></label><label class="fl w2">E-mail<input class="f" id="sMail" value="${esc(c.email)}"></label></div>
+   <div class="fg"><label class="fl w2">Niveaux (séparés par des virgules)<input class="f" id="sLvl" value="${esc(c.levels.join(', '))}"></label><label class="fl w2">Groupes (séparés par des virgules)<input class="f" id="sGrp" value="${esc(c.groups.join(', '))}"></label><label class="fl">Validité du certificat (mois)<input class="f" id="sCert" value="${c.certMonths}" inputmode="numeric"></label></div>
+   <div><button class="btn primary" data-act="saveCfg">Enregistrer</button></div></div>
+  <div class="stack"><div class="panel"><h2>Sauvegarde</h2><p class="small" style="margin:0">Les données sont enregistrées <b>sur cet appareil</b> (${n} éléments). Téléchargez une sauvegarde chaque semaine et gardez-la en lieu sûr (clé USB, Google Drive…). Pour passer sur un autre appareil : téléchargez la sauvegarde ici, puis restaurez-la là-bas.</p>
+   <span class="small muted">${last?'Dernière sauvegarde : '+frD(iso(new Date(+last))):'Aucune sauvegarde pour l’instant.'}</span>
+   <div class="row"><button class="btn primary" data-act="backup">💾 Télécharger une sauvegarde</button><label class="btn">Restaurer une sauvegarde<input type="file" id="restoreIn" accept=".json,application/json" hidden></label></div></div>
+   <div class="panel"><h2>Essayer l’outil</h2><p class="small" style="margin:0">Ajoute des adhérents, abonnements, circuits et sorties d’exemple pour découvrir l’outil. À effacer ensuite avant de commencer pour de vrai.</p><div class="row"><button class="btn" data-act="sample">Charger des exemples</button><button class="btn danger" data-act="wipe">Tout effacer</button></div></div></div></div></div>`},
+ after(){$('#logoIn').addEventListener('change',e=>{const f=e.target.files[0];if(f)photoResize(f,400,d=>{setCfg({logo:d});render();applyBrand()})});
+  $('#restoreIn').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;let d;try{d=JSON.parse(await f.text())}catch(err){return toast('Fichier illisible')}if(!d||d.app!=='club'||!d.data)return toast('Ce fichier n’est pas une sauvegarde du club');
+   ask('Restaurer cette sauvegarde du '+frD((d.date||'').slice(0,10))+' ? Les données actuelles de cet appareil seront remplacées.','Restaurer',()=>{COLS.forEach(c=>{DB[c]=d.data[c]||{};save(c)});flush();closeModal();applyBrand();go('accueil');toast('Sauvegarde restaurée')},true)})}};
+function backup(){flush();const d={app:'club',version:1,date:new Date().toISOString(),data:DB};download('sauvegarde-club-'+today()+'.json',JSON.stringify(d),'application/json');lsSet('club-lastBackup',String(Date.now()));toast('Sauvegarde téléchargée');if(route.page==='accueil'||route.page==='reglages')render()}
+function applyBrand(){const c=cfg();$('#bName').textContent=c.club;$('#bTag').textContent=c.tagline||'';$('#bLogo').innerHTML=c.logo?`<img src="${c.logo}" alt="">`:LOGO_SVG}
+
+/* ================= ACTIONS ================= */
+const A={
+ close:closeModal,cfYes:()=>{const cb=confirmCb;confirmCb=null;closeModal();cb&&cb()},
+ newMember:()=>memberForm(),editMember:e=>memberForm(e.dataset.id),saveMember,
+ photoDel:()=>{delete form.photo;$('#fPhoto').innerHTML=avatar(form,'lg')},
+ archMember:()=>{readForm();form.archived=!form.archived;put('members',form);closeModal();render();toast(form.archived?'Adhérent archivé (il reste dans l’historique)':'Adhérent réactivé')},
+ mFilter:e=>{mF=e.dataset.f;render()},
+ blankFiche:()=>printDoc(ficheDoc(null)),printFiche:e=>printDoc(ficheDoc(DB.members[e.dataset.id])),
+ waMember:e=>{const m=DB.members[e.dataset.id];waOpen(m.phone,`Bonjour ${m.firstName||''}, `)},
+ waRelance:e=>{const m=DB.members[e.dataset.id];waOpen(m.phone,relanceText(m))},
+ newEval:e=>evalForm(e.dataset.id),editEval:e=>evalForm(null,e.dataset.id),saveEval,
+ delEval:()=>{const id=form.id;ask('Supprimer cette évaluation ?','Supprimer',()=>{del('evals',id);render()},true)},
+ score:e=>{form.scores[e.dataset.k]=+e.dataset.v;$$(`#ov [data-act=score][data-k="${e.dataset.k}"]`).forEach(b=>b.setAttribute('aria-pressed',b===e))},
+ newSub:e=>subForm(e.dataset.id||''),editSub:e=>subForm(null,e.dataset.id),saveSub,
+ delSub:()=>{const id=form.id;ask('Supprimer cet abonnement et son paiement ?','Supprimer',()=>{del('subs',id);render()},true)},
+ printRecu:e=>printDoc(recuDoc(DB.subs[e.dataset.id])),exportCsv,
+ addPlan:()=>{const P=readPlans();P.push({id:uid('p'),name:'Nouvelle formule',kind:'mois',months:1,price:0});setCfg({plans:P});render()},
+ delPlan:e=>{const P=readPlans();P.splice(+e.dataset.i,1);setCfg({plans:P});render()},
+ savePlans:()=>{setCfg({plans:readPlans().filter(p=>p.name)});render();toast('Formules enregistrées')},
+ newAct:()=>actForm(),editAct:e=>actForm(e.dataset.id),saveAct,aView:e=>{aView=e.dataset.v;render()},
+ delAct:()=>{const id=form.id;ask('Supprimer cette activité et ses présences ?','Supprimer',()=>{del('acts',id);go('activites')},true)},
+ dupAct:()=>{readForm();const c={...JSON.parse(JSON.stringify(form)),id:uid('V'),parts:[],status:'prevue',date:addDays(form.date,7)};closeModal();actForm(null,c);toast('Copie : vérifiez la date puis enregistrez')},
+ addParts:e=>partPicker(e.dataset.id),ppAll:()=>$$('#ppL [data-pp]').forEach(i=>{if(!i.closest('[data-nm]').hidden)i.checked=true}),
+ ppOk:e=>{const a=DB.acts[e.dataset.id];const ids=$$('#ppL [data-pp]:checked').map(i=>i.dataset.pp);if(!ids.length)return toast('Cochez au moins un adhérent');a.parts=[...(a.parts||[]),...ids.map(id=>({memberId:id,present:done(a)}))];put('acts',a);closeModal();render();toast(ids.length+' adhérent(s) inscrit(s)')},
+ rmPart:e=>{const a=DB.acts[route.id];a.parts=(a.parts||[]).filter(p=>p.memberId!==e.dataset.id);put('acts',a);render()},
+ allPresent:e=>{const a=DB.acts[e.dataset.id];(a.parts||[]).forEach(p=>p.present=true);put('acts',a);render();toast('Tout le monde est marqué présent')},
+ shareAct:e=>copyText(shareText(DB.acts[e.dataset.id])),printPres:e=>printDoc(presDoc(DB.acts[e.dataset.id])),
+ newCircuit:()=>circuitForm(),editCircuit:e=>circuitForm(e.dataset.id),saveCircuit,cFilter:e=>{cF=e.dataset.v;render()},
+ delCircuit:()=>{const id=form.id;ask('Supprimer ce circuit ? Les activités passées gardent leurs kilomètres.','Supprimer',()=>{all('acts').filter(a=>a.circuitId===id).forEach(a=>{put('acts',{...a,circuitId:'',km:actKm(a),dplus:actDplus(a)})});del('circuits',id);go('circuits')},true)},
+ actOnCircuit:e=>actForm(null,{circuitId:e.dataset.id,title:'Sortie · '+DB.circuits[e.dataset.id].name}),gpxOut:e=>gpxOut(DB.circuits[e.dataset.id]),
+ prP:e=>{prP=e.dataset.v;render()},
+ saveCfg:()=>{const sp=v=>v.split(',').map(x=>x.trim()).filter(Boolean);setCfg({club:$('#sClub').value.trim()||DEF.club,tagline:$('#sTag').value.trim(),city:$('#sCity').value.trim(),phone:$('#sPhone').value.trim(),address:$('#sAddr').value.trim(),email:$('#sMail').value.trim(),levels:sp($('#sLvl').value),groups:sp($('#sGrp').value),certMonths:pnum($('#sCert').value)||12});applyBrand();toast('Réglages enregistrés')},
+ logoDel:()=>{setCfg({logo:''});applyBrand();render()},
+ backup,sample:()=>ask('Ajouter des données d’exemple (12 adhérents, circuits, sorties, abonnements) ?','Ajouter les exemples',()=>{sampleData();go('accueil');toast('Exemples ajoutés')}),
+ wipe:()=>ask('Effacer TOUTES les données du club sur cet appareil ?\nTéléchargez d’abord une sauvegarde si besoin.','Tout effacer',()=>{COLS.forEach(c=>{DB[c]={};save(c)});flush();applyBrand();go('accueil');toast('Données effacées')},true)
+};
+document.addEventListener('click',e=>{const h=e.target.closest('[data-href]');if(h&&!e.target.closest('a,button,input,label')){go(h.dataset.href.slice(1));return}
+  const b=e.target.closest('[data-act]');if(!b)return;if(b.tagName==='A')return;const f=A[b.dataset.act];if(f){e.preventDefault();f(b)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov').hidden)closeModal()});
+$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+
+/* ================= EXEMPLES ================= */
+function sampleData(){const t=today();const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));const pick=a=>a[Math.floor(Math.random()*a.length)];
+  let K=1;const loop=(lat,lon,r,n,amp,base)=>{const P=[];let d=0;K++;const ex=.6+K*.25;for(let i=0;i<=n;i++){const a=i/n*2*Math.PI;const rr=r*(1+.28*Math.sin(K*a+K)+.12*Math.cos((K+2)*a+1));const p=[+(lat+rr*Math.sin(a)).toFixed(5),+(lon+rr*ex*Math.cos(a)-r*ex).toFixed(5),Math.max(4,Math.round(base+amp*(Math.sin(a*2)+1)/2+amp*.3*Math.sin(a*7)))];if(i)d+=hav(P[i-1],p);P.push([...p,Math.round(d)])}return P};
+  const mk=(name,type,diff,lat,lon,r,amp,base,start,desc)=>{const pts=loop(lat,lon,r,180,amp,base);let up=0;for(let i=1;i<pts.length;i++){const dd=pts[i][2]-pts[i-1][2];if(dd>0)up+=dd}const c={id:uid('C'),name,type,diff,km:Math.round(pts[pts.length-1][3]/100)/10,dplus:Math.round(up),pts,start,desc,duration:''};put('circuits',c);return c};
+  const C=[mk('Boucle de la corniche','Route',1,36.87,10.33,.035,40,10,'Café de la plage','Plat et roulant, idéal pour les débutants. Pause café à mi-parcours.'),mk('Tour des collines','Route',2,36.80,10.10,.09,220,60,'Rond-point de l’entrée de ville','Deux côtes régulières, belle vue au sommet.'),mk('Forêt et singletracks','VTT',3,36.75,10.25,.05,260,120,'Parking de la forêt','Chemins techniques, racines. VTT obligatoire.'),mk('Grande boucle du dimanche','Gravel',3,36.70,10.05,.16,420,80,'Magasin Sport Plus Aventure','Pistes et petites routes, 2 ravitaillements.')];
+  C[0].duration='1 h 30';C[1].duration='2 h 15';C[2].duration='2 h';C[3].duration='4 h';C.forEach(c=>put('circuits',c));
+  const N=[['Ahmed','Ben Salah','H','Confirmé'],['Sarra','Trabelsi','F','Intermédiaire'],['Mehdi','Jlassi','H','Expert'],['Ines','Gharbi','F','Débutant'],['Youssef','Mansour','H','Intermédiaire'],['Amira','Ayari','F','Confirmé'],['Karim','Hamdi','H','Débutant'],['Leila','Bouazizi','F','Intermédiaire'],['Nizar','Khelifi','H','Confirmé'],['Rim','Saidi','F','Débutant'],['Omar','Chaabane','H','Débutant'],['Yasmine','Dridi','F','Intermédiaire']];
+  const P=cfg().plans;const M=N.map(([f,l,s,lv],i)=>{const join=addDays(t,-R(20,420));const by=2026-R(i===10?13:18,55);const m=put('members',{id:uid('M'),num:nextNum('A','members','num'),firstName:f,lastName:l,sex:s,level:lv,group:i===10?'Jeunes':pick(['Loisir','Sportif','Loisir']),birth:i===10?'2012-05-14':by+'-'+pad(R(1,12))+'-'+pad(R(1,28)),phone:'2'+String(1000000+i*7351).slice(0,7),city:pick(['Tunis','La Marsa','Ariana','Ben Arous']),joinDate:join,certDate:i===3?'':addDays(t,-R(10,i===6?400:300)),blood:pick(['A+','O+','B+','O−','']),bike:{type:pick(['Route','VTT','Gravel','VTT']),brand:pick(['Rockrider','Btwin','Giant','Trek','Specialized'])},emergency:{name:pick(['Mohamed','Fatma','Ali','Salma'])+' '+l,relation:pick(['Conjoint(e)','Père','Mère','Frère']),phone:'9'+String(2000000+i*5113).slice(0,7)},guardian:i===10?{name:'Hedi Chaabane',phone:'98123456',ok:true}:{},consentRules:true,consentImage:i%4!==0,goal:pick(['Faire 50 km sans m’arrêter','Progresser en descente','Préparer une course','Rouler en groupe','']),bikeType:''});
+    const p=i%5===0?P[2]:i%5===1?P[1]:i%5===4?P[3]:P[0];const start=i===7?addDays(t,-70):i===9?addDays(t,-28):addDays(t,-R(2,20));const sb={id:uid('S'),num:nextNum('R','subs','num'),memberId:m.id,planId:p.id,planName:p.name,start,end:addMonths(start,+p.months||1),sessions:p.kind==='seances'?p.sessions:'',price:p.price,paid:i===2?p.price/2:p.price,method:pick(['especes','especes','virement']),date:start};put('subs',sb);return m});
+  const types=['sortie','sortie','sortie','entrainement','sortie','formation','sortie','evenement'];
+  for(let w=10;w>=1;w--){const d=addDays(t,-w*6-R(0,2));const ty=types[w%types.length];const c=ty==='formation'||ty==='evenement'?null:pick(C);const parts=M.filter(()=>Math.random()<.55).map(m=>({memberId:m.id,present:Math.random()<.88,km:Math.random()<.15&&c?Math.round(c.km*.6):null}));
+    put('acts',{id:uid('V'),type:ty,title:ty==='formation'?pick(['Atelier : réparer une crevaison','Atelier : régler ses freins','Formation sécurité en groupe']):ty==='evenement'?'Petit-déjeuner du club':ty==='entrainement'?'Entraînement fractionné':'Sortie · '+c.name,date:d,time:ty==='evenement'?'09:30':'07:30',circuitId:c?c.id:'',km:ty==='entrainement'&&!c?'25':'',meet:c?c.start:'Magasin Sport Plus Aventure',leader:pick(['Mehdi','Ahmed','Amira']),level:c?['','Tous niveaux','Intermédiaire','Confirmé','Confirmé'][c.diff]:'Tous niveaux',status:'prevue',parts,desc:ty==='evenement'?'Café, jus et gâteaux offerts. Venez avec vos idées de sorties !':''})}
+  [[3,'sortie',C[0]],[7,'formation',null],[10,'sortie',C[3]]].forEach(([n,ty,c])=>put('acts',{id:uid('V'),type:ty,title:ty==='formation'?'Atelier mécanique : entretenir sa transmission':'Sortie · '+c.name,date:addDays(t,n),time:ty==='formation'?'17:00':'07:30',circuitId:c?c.id:'',meet:c?c.start:'Atelier Sport Plus Aventure',leader:'Mehdi',level:ty==='formation'?'Tous niveaux':c.diff>2?'Confirmé':'Tous niveaux',max:ty==='formation'?8:'',status:'prevue',parts:M.slice(0,R(3,7)).map(m=>({memberId:m.id,present:false})),desc:ty==='formation'?'Nettoyage, graissage, mesure d’usure de la chaîne. Apportez votre vélo.':'Casque obligatoire, 2 bidons, chambre à air de rechange.'}));
+  M.slice(0,6).forEach((m,i)=>{const base=()=>R(1,4);put('evals',{id:uid('E'),memberId:m.id,date:addDays(t,-90),by:'Mehdi',level:m.level,scores:{endurance:base(),technique:base(),mecanique:base(),securite:base(),groupe:base()},comment:'Bonne base, à travailler dans les montées.'});put('evals',{id:uid('E'),memberId:m.id,date:addDays(t,-10),by:'Mehdi',level:m.level,scores:{endurance:R(2,5),technique:R(2,5),mecanique:R(2,5),securite:R(3,5),groupe:R(3,5)},comment:'Belle progression, très bon esprit de groupe.',next:'Tenter la Grande boucle du dimanche'})})}
+
+/* ================= DÉMARRAGE ================= */
+(async()=>{await loadAll();applyBrand();if(!location.hash)history.replaceState(null,'','#accueil');render()})();
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+</script>
+</body>
+</html>
